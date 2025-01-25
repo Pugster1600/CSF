@@ -10,15 +10,23 @@
 UInt256 uint256_create_from_u32( uint32_t val ) {
   UInt256 result;
   // TODO: implement
+  result.data[0] = val;
+  for (int i = 1; i < sizeof(result.data)-1; ++i) {
+    result.data[i] = 0;
+  }
+  
   return result;
 }
 
-// Create a UInt256 value from an array of NWORDS uint32_t values.
+// Create a UInt256 value from an array of N WORDS uint32_t values.
 // The element at index 0 is the least significant, and the element
 // at index 7 is the most significant.
 UInt256 uint256_create( const uint32_t data[8] ) {
   UInt256 result;
   // TODO: implement
+  for (int i = 0; i < sizeof(result.data)-1; ++i){
+    result.data[i] = data[i];
+  }
   return result;
 }
 
@@ -26,7 +34,32 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 UInt256 uint256_create_from_hex( const char *hex ) {
   UInt256 result;
   // TODO: implement
+  int length = strlen(hex);
+  reverse(hex, length);
+  int current = 
+    for (int i = 0; i < length - 1; i=i+8){
+      char *end;
+    //substring 8 into string.strtoul
+    //check if length - i less than 8
+      
+
+      unsigned long int result = strtout(
+  }
   return result;
+}
+
+
+void reverse(const char *str, int length) {
+  int start = 0;
+  int end = length - 1;
+  while (start < end) {
+    char temp = str[start];
+    str[start] = str[end];
+    str[end] = temp;
+    start++;
+    end--;
+  }
+  
 }
 
 // Return a dynamically-allocated string of hex digits representing the
@@ -42,13 +75,21 @@ char *uint256_format_as_hex( UInt256 val ) {
 // significant 32 bits.
 uint32_t uint256_get_bits( UInt256 val, unsigned index ) {
   uint32_t bits;
-  // TODO: implement
+  //TODO
+  bits = val.data[index];
   return bits;
 }
 
 // Return 1 if bit at given index is set, 0 otherwise.
-int uint256_is_bit_set( UInt256 val, unsigned index ) {
+int uint256_is_bit_set( UInt256 val, unsigned index) {
   // TODO: implement
+  int arrayIndex = index / 32; //get the array index
+  int shift = index % 32;
+  uint32_t bitmask = 1 << shift;
+
+  if (val.data[arrayIndex] & bitmask){
+    return 1;
+  }
   return 0;
 }
 
