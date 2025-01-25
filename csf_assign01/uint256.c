@@ -11,7 +11,7 @@ UInt256 uint256_create_from_u32( uint32_t val ) {
   UInt256 result;
   // TODO: implement
   result.data[0] = val;
-  for (int i = 1; i < sizeof(result.data)-1; ++i) {
+  for (long unsigned int i = 1; i < sizeof(result.data)-1; ++i) {
     result.data[i] = 0;
   }
   
@@ -24,7 +24,7 @@ UInt256 uint256_create_from_u32( uint32_t val ) {
 UInt256 uint256_create( const uint32_t data[8] ) {
   UInt256 result;
   // TODO: implement
-  for (int i = 0; i < sizeof(result.data)-1; ++i){
+  for (long unsigned int i = 0; i < sizeof(result.data)-1; ++i){
     result.data[i] = data[i];
   }
   return result;
@@ -34,22 +34,47 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 UInt256 uint256_create_from_hex( const char *hex ) {
   UInt256 result;
   // TODO: implement
+
+  //0. attributes
   int length = strlen(hex);
-  reverse(hex, length);
-  int current = 
-    for (int i = 0; i < length - 1; i=i+8){
-      char *end;
+  int maxSize = 64;
+
+  //1. create the reversed string
+  char copiedString[length + 1];
+  strcpy(copiedString, hex);
+  reverse(copiedString, length);
+
+  
+  int updatedHexLength = length > maxSize ? maxSize : length; 
+
+  
+
+  int sections;
+  int remainder;
+
+  if (updatedHexLength == length || updatedHexLength == maxSize){
+    remainder = updatedHexLength % 8;
+    if (remainder == 0){
+      sections = updatedHexLength / 8;
+    } else{
+      sections = (updatedHexLength / 8) + 1;
+    }
+
+    for (int i = 0; i < sections; i++){
+      result.data[i] = 0;
+      //unsigned long int result = strtout(
+    }
+  }
+
+
     //substring 8 into string.strtoul
     //check if length - i less than 8
-      
-
-      unsigned long int result = strtout(
-  }
+    
   return result;
 }
 
 
-void reverse(const char *str, int length) {
+void reverse(char *str, int length) {
   int start = 0;
   int end = length - 1;
   while (start < end) {
@@ -59,7 +84,6 @@ void reverse(const char *str, int length) {
     start++;
     end--;
   }
-  
 }
 
 // Return a dynamically-allocated string of hex digits representing the
@@ -111,6 +135,7 @@ UInt256 uint256_sub( UInt256 left, UInt256 right ) {
 UInt256 uint256_negate( UInt256 val ) {
   UInt256 result;
   // TODO: implement
+  //toggle each bit with xor then + 1
   return result;
 }
 

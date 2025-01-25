@@ -54,4 +54,6 @@ UInt256 uint256_mul( UInt256 left, UInt256 right );
 // Shift given UInt256 value left by specified number of bits.
 UInt256 uint256_lshift( UInt256 val, unsigned shift );
 
+void reverse(char *, int);
+
 #endif // UINT256_H
