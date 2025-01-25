@@ -47,8 +47,6 @@ UInt256 uint256_create_from_hex( const char *hex ) {
   
   int updatedHexLength = length > maxSize ? maxSize : length; 
 
-  
-
   int sections;
   int remainder;
 
@@ -89,7 +87,21 @@ void reverse(char *str, int length) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char *uint256_format_as_hex( UInt256 val ) {
-  char *hex = NULL;
+  //loop through val and cover with bit mask
+  char hex[64 + 1];
+  hex[64] = "\0";
+
+  for (unsigned long i = 0; i < sizeof(val.data); ++i){
+    uint32_t data = val.data[i];
+    for (int j = 0; j < 8; j++){
+      uint32_t mask = ~((1111) << (4 * j));
+      uint32_t value = data & mask;
+      char hexChar = (value < 10) ? '0' + value : 'A' + (value - 10);
+      hex[(i * 8) + j]; 
+    }
+  }
+
+  //char *hex = malloc(sizeof(char)); 
   // TODO: implement
   return hex;
 }
