@@ -36,13 +36,12 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 UInt256 uint256_create_from_hex( const char *hex ) {
   //UInt256 result;
   UInt256 result = uint256_create_from_u32(0);
-
-  int firstIndex = strlen(hex); //most right index
-  int maxSize = 64;
-  int finalIndex = firstIndex - maxSize > 0 ? firstIndex - maxSize : 0; //most left index
-  int totalChars = firstIndex - finalIndex;
-  int extraChars = totalChars % 8;
-  int totalIterations = extraChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
+  const int firstIndex = strlen(hex); //most right index
+  const int maxSize = 64;
+  const int finalIndex = firstIndex - maxSize > 0 ? firstIndex - maxSize : 0; //most left index
+  const int totalChars = firstIndex - finalIndex;
+  const int extraChars = totalChars % 8;
+  const int totalIterations = extraChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
   char newHex[totalChars];
 
   //going in reverse order to fill in the newHex 
@@ -64,9 +63,6 @@ UInt256 uint256_create_from_hex( const char *hex ) {
 
     unsigned long int val = strtoul(temp, &endptr, 16);
     result.data[i] = val;
-
-    printf("val: %lu\n", result.data[i]);
-    printf("str: %s\n", temp);
   }
   return result;
 }
