@@ -50,7 +50,7 @@ void fromHexTest(){
   //uint256_create_from_hex("abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh");
   //uint256_create_from_hex("abcdefgha");
   //uint256_create_from_hex("fffffffff");
-  uint256_create_from_hex("ffffffffffffffffffffffffffffffffff");
+  uint256_create_from_hex("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
   //int x = strlen(string);
 }
 
