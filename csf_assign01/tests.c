@@ -52,8 +52,18 @@ void fromHexTest(){
   //int x = strlen(string);
 }
 
+void toHexTest(){
+  UInt256 data = uint256_create_from_u32(0);
+  data.data[0] = 0xAA;  // 0b10101010
+  data.data[1] = 0x55;  // 0b01010101
+  data.data[7] = 0x12345678;  // 0b01010101
+
+  char * val = uint256_format_as_hex(data);
+  printf("str: %s", val);
+}
 int main(){
   //isBitSetTest();
-  fromHexTest();
+  //fromHexTest();
+  toHexTest();
   return 0;
 }
