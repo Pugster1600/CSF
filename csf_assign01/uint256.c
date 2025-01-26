@@ -119,6 +119,7 @@ char * uint256_format_as_hex( UInt256 val ) {
     for (int j = 0; j < bit; j++){
       //going from lsb to msb
       int hexIndex = (places - 1 - i) * 8 + j;
+      //remainder = 0 for some reason
       if (bit != 8){
         hex[hexIndex] = buffer[bit - 1 - j];
       }
