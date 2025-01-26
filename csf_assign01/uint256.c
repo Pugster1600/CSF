@@ -90,39 +90,55 @@ char * uint256_format_as_hex( UInt256 val ) {
   char buffer[9];
   int places;
 
+  //find first group to not equal 0
   for (int i = 7; i >= 0; i--){
-    //first not equal 0
     if (val.data[i] != 0){
       places = i + 1;
       break;
     } 
   }
-  
-  //int remainderIndex = 0;
-  //for (int i = 0; i < 8; i++){
-  //  uint32_t shifting = (0xf << (4*i)) | ~(0xf << (4 * i)); //set everything to 1
-  //  if (val.data[places - 1] < shifting){
-  //    remainderIndex = i - 1;
-  //  }
-  //  printf("shifted: %lu\n", shifting);
-  //}
 
-  char *hex = malloc(sizeof(char) * places * 8 + 1); //max 64 + 1
-
+  //something is wrong with remainder!
+  int remainder = sprintf(buffer, "%x", val.data[places - 1]);
+  int totalChars = (places - 1) * 8 + remainder;
+  char *hex = malloc((sizeof(char) * (totalChars + 1))); //max 64 + 1
+  hex[sizeof(char) * totalChars] = '\0';
 
   for (int i = 0; i < places; i++){
-    printf("place: %d", i);
-    if (i == places - 1){
+    int finalGroup = i == places - 1;
+    if (finalGroup){
       sprintf(buffer, "%x", val.data[i]);
     } 
     else{
       sprintf(buffer, "%08x", val.data[i]);
     }
 
-    for (int j = 0; j < strlen(buffer); j++){
-      hex[j + (i*8)] = buffer[j];
+    printf("buff %s\n", buffer);
+
+    int bit = finalGroup ? remainder : 8;
+    for (int j = 0; j < bit; j++){
+      //going from lsb to msb
+      int hexIndex = (places - 1 - i) * 8 + j;
+      if (bit != 8){
+        hex[hexIndex] = buffer[bit - 1 - j];
+      }
+      else{
+        hex[hexIndex] = buffer[8 - 1 - j];
+      }
+      
+      printf("val: %d\n", hexIndex);
+    }
+
+  }
+
+  for (int i = 0; i < (sizeof(char) * (totalChars + 1)); i++){
+    printf("%c", hex[i]);
+    if (hex[i] == '\0'){
+      printf("WETF", hex[i+1]);
     }
   }
+  printf("\n");
+
 
   // TODO: implement
   return hex;

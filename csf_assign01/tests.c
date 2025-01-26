@@ -54,9 +54,16 @@ void fromHexTest(){
 
 void toHexTest(){
   UInt256 data = uint256_create_from_u32(0);
-  data.data[0] = 0xAA;  // 0b10101010
-  data.data[1] = 0x55;  // 0b01010101
-  data.data[7] = 0x12345678;  // 0b01010101
+  data.data[0] = 0xdeadbeef;  // 0b10101010
+  data.data[1] = 0xdeadbeef;  // 0b01010101
+  data.data[2] = 0x1111beef;
+  data.data[3] = 0x1111;
+  //data.data[3] = 0x11111111;  // 0b10101010
+  //data.data[4] = 0x12345678;  // 0b01010101
+  //data.data[5] = 0x1111beef;
+  //data.data[6] = 0x11111111;  // 0b10101010
+  //data.data[7] = 0x1111beef;  // 0b01010101
+  //data.data[7] = 0xdeadbeef;  // 0b01010101
 
   char * val = uint256_format_as_hex(data);
   printf("str: %s", val);
