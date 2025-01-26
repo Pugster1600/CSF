@@ -9,12 +9,14 @@
 // all other bits are set to 0.
 UInt256 uint256_create_from_u32( uint32_t val ) {
   UInt256 result;
+  unsigned long iterations = sizeof(result.data) / sizeof(result.data[0]);
+
   // TODO: implement
   result.data[0] = val;
-  for (long unsigned int i = 1; i < sizeof(result.data)-1; ++i) {
+  for (unsigned long i = 1; i < iterations; ++i) {
     result.data[i] = 0;
   }
-  
+
   return result;
 }
 
@@ -33,44 +35,43 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex( const char *hex ) {
   UInt256 result;
-  // TODO: implement
-
-  //0. attributes
-  int length = strlen(hex);
-  int maxSize = 64;
-
-  //1. create the reversed string
-  char copiedString[length + 1];
-  strcpy(copiedString, hex);
-  reverse(copiedString, length);
-
-  
-  int updatedHexLength = length > maxSize ? maxSize : length; 
-
-  int sections;
-  int remainder;
-
-  if (updatedHexLength == length || updatedHexLength == maxSize){
-    remainder = updatedHexLength % 8;
-    if (remainder == 0){
-      sections = updatedHexLength / 8;
-    } else{
-      sections = (updatedHexLength / 8) + 1;
-    }
-
-    for (int i = 0; i < sections; i++){
-      result.data[i] = 0;
-      //unsigned long int result = strtout(
-    }
+  for (int i = 0; i < 8; i++){
+    result.data[i] = 0;
   }
 
+  int firstIndex = strlen(hex); //most right index
+  int maxSize = 64;
+  int finalIndex = firstIndex - maxSize > 0 ? firstIndex - maxSize : 0; //most left index
+  int totalChars = firstIndex - finalIndex;
+  int extraChars = totalChars % 8;
+  int totalIterations = extraChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
+  char newHex[totalChars];
 
-    //substring 8 into string.strtoul
-    //check if length - i less than 8
-    
+  //going in reverse order to fill in the newHex 
+  for (int i = firstIndex; i > finalIndex; --i){
+    int newHexOffset = firstIndex - i;
+    newHex[newHexOffset] = hex[i - 1]; //newHexMaxIndex - newHexOffset -> int newHexMaxIndex = sizeof(newHex) - 1;
+  }
+
+  //converting 8 chars at a time
+  for (int i = 0; i < totalIterations; i++){
+    int charIterations = totalChars - (i * 8) >= 8 ? 8 : extraChars;
+    char temp[charIterations + 1];
+    temp[charIterations] = '\0';
+    char * endptr;
+
+    for (int j = 0; j < charIterations; j++){
+      temp[j] = newHex[(i * 8) + j];
+    }
+
+    unsigned long int val = strtoul(temp, &endptr, 16);
+    result.data[i] = val;
+
+    printf("val: %lu\n", result.data[i]);
+    printf("str: %s\n", temp);
+  }
   return result;
 }
-
 
 void reverse(char *str, int length) {
   int start = 0;
@@ -86,10 +87,10 @@ void reverse(char *str, int length) {
 
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
-char *uint256_format_as_hex( UInt256 val ) {
+char * uint256_format_as_hex( UInt256 val ) {
   //loop through val and cover with bit mask
   char hex[64 + 1];
-  hex[64] = "\0";
+  hex[64] = '\0';
 
   for (unsigned long i = 0; i < sizeof(val.data); ++i){
     uint32_t data = val.data[i];
@@ -110,8 +111,8 @@ char *uint256_format_as_hex( UInt256 val ) {
 // Index 0 is the least significant 32 bits, index 7 is the most
 // significant 32 bits.
 uint32_t uint256_get_bits( UInt256 val, unsigned index ) {
+  // TODO: implement
   uint32_t bits;
-  //TODO
   bits = val.data[index];
   return bits;
 }
