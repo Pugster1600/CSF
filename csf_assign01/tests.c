@@ -67,6 +67,7 @@ void toHexTest(){
 
   char * val = uint256_format_as_hex(data);
   printf("str: %s", val);
+  free(val);
 }
 int main(){
   //isBitSetTest();

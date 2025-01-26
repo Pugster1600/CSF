@@ -94,6 +94,7 @@ char * uint256_format_as_hex( UInt256 val ){
       break;
     } 
   }
+
   int remainder = sprintf(buffer, "%x", val.data[buckets - 1]);
   int totalChars = (buckets - 1) * 8 + remainder;
   char *hex = malloc((sizeof(char) * (totalChars)) + 1); //max 64 + 1
@@ -101,24 +102,30 @@ char * uint256_format_as_hex( UInt256 val ){
   printf("all: %d\n", totalChars);
   printf("buck: %d\n", buckets);
 
-  for (int i = 0; i < buckets; i++){
+  for (int i = buckets - 1; i >= 0; i--){
     int finalGroup = i == buckets - 1;
+    int charIters;
     if (finalGroup){
       sprintf(buffer, "%x", val.data[i]);
+      charIters = remainder;
     } 
     else{
       sprintf(buffer, "%08x", val.data[i]);
+      charIters = 8;
     }
 
-    //reverse the buffer then set malloc thing equal to it
-
-    int bit = finalGroup ? remainder : 8;
-
+    for (int charIndex = 0; charIndex < charIters; charIndex++){
+      hex[totalChars - (8 * i) - charIndex]= buffer[charIndex];
+    }
   }
 
-  for (int i = 0; i < (sizeof(char) * (totalChars + 1)); i++){
-    printf("%c", hex[i]);
-  }
+  //for (int i = 0; i < (sizeof(char) * (totalChars + 1)); i++){
+  //  printf("%c", hex[i]);
+  //  if (hex[i] == '0'){
+  //    printf("bruh");
+  //  }
+  //}
+  //printf("\n");
 
 
   // TODO: implement

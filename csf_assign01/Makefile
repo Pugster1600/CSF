@@ -18,7 +18,7 @@ uint256_tests : $(OBJS)
 	$(CC) -o $@ $(OBJS)
 
 clean :
-	rm -f $(OBJS) uint256_tests depend.mak $(OWN_OBJS)
+	rm -f $(OBJS) uint256_tests depend.mak $(OWN_OBJS) tests
 
 depend :
 	$(CC) $(CFLAGS) -M $(SRCS) > depend.mak
