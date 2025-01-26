@@ -34,10 +34,8 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex( const char *hex ) {
-  UInt256 result;
-  for (int i = 0; i < 8; i++){
-    result.data[i] = 0;
-  }
+  //UInt256 result;
+  UInt256 result = uint256_create_from_u32(0);
 
   int firstIndex = strlen(hex); //most right index
   int maxSize = 64;
