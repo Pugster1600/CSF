@@ -85,7 +85,8 @@ void reverse(char *str, int length) {
 char * uint256_format_as_hex( UInt256 val ){
   //loop through val and cover with bit mask
   char buffer[9];
-  int buckets;
+  int buckets = 0;
+  char * hex;
 
   //find first group to not equal 0
   for (int i = 7; i >= 0; i--){
@@ -95,33 +96,35 @@ char * uint256_format_as_hex( UInt256 val ){
     } 
   }
 
+  if (buckets == 0){
+    hex = malloc(sizeof(char) * 2);
+    hex[0] = '0';
+    hex[1] = '\0';
+    return hex;
+  }
+
   int remainder = sprintf(buffer, "%x", val.data[buckets - 1]);
   int totalChars = (buckets - 1) * 8 + remainder;
-  char *hex = malloc((sizeof(char) * (totalChars)) + 1); //max 64 + 1
+  hex = malloc((sizeof(char) * (totalChars)) + 1); //max 64 + 1
   hex[sizeof(char) * totalChars] = '\0';
-  printf("all: %d\n", totalChars);
-  printf("buck: %d\n", buckets);
 
   for (int i = buckets - 1; i >= 0; i--){
     int finalGroup = i == buckets - 1;
     int charIters;
     if (finalGroup){
-      sprintf(buffer, "%x", val.data[i]);
+      sprintf(buffer, "%x", val.data[7 - i]);
       charIters = remainder;
     } 
     else{
-      sprintf(buffer, "%08x", val.data[i]);
+      sprintf(buffer, "%08x", val.data[7 - i]);
       charIters = 8;
     }
-
+    //8*i is buffer offset, -1 for index, charIndex for char offset
     for (int charIndex = 0; charIndex < charIters; charIndex++){
-      hex[totalChars - (8 * i) - charIndex - 1]= buffer[charIndex]; //8*i is buffer offset, -1 for index, charIndex for char offset
+      hex[totalChars - (8 * i) - charIndex - 1]= buffer[charIndex]; 
     }
   }
-
-  // TODO: implement
   return hex;
-  //return hex;
 }
 
 // Get 32 bits of data from a UInt256 value.
