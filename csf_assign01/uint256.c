@@ -115,18 +115,9 @@ char * uint256_format_as_hex( UInt256 val ){
     }
 
     for (int charIndex = 0; charIndex < charIters; charIndex++){
-      hex[totalChars - (8 * i) - charIndex]= buffer[charIndex];
+      hex[totalChars - (8 * i) - charIndex - 1]= buffer[charIndex]; //8*i is buffer offset, -1 for index, charIndex for char offset
     }
   }
-
-  //for (int i = 0; i < (sizeof(char) * (totalChars + 1)); i++){
-  //  printf("%c", hex[i]);
-  //  if (hex[i] == '0'){
-  //    printf("bruh");
-  //  }
-  //}
-  //printf("\n");
-
 
   // TODO: implement
   return hex;
