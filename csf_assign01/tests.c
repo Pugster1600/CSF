@@ -45,11 +45,9 @@ void isBitSetTest(){
 
 void fromHexTest(){
   //char string[100] = "ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff";
-  char string[100] = "abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh";
-  //char string[100] = "abcdefghabcdefgh";
-  //uint256_create_from_hex("abcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefghabcdefgh");
-  //uint256_create_from_hex("abcdefgha");
-  //uint256_create_from_hex("fffffffff");
+  char string[100] = "deadbeeff";
+  //uint256_create_from_hex("fdeadbeef");
+  uint256_create_from_hex("afeebdaed");
   uint256_create_from_hex("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
   //int x = strlen(string);
 }
