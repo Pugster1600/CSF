@@ -36,6 +36,7 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 UInt256 uint256_create_from_hex( const char *hex ) {
   //UInt256 result;
   UInt256 result = uint256_create_from_u32(0);
+
   const int firstIndex = strlen(hex); //most right index
   const int maxSize = 64;
   const int finalIndex = firstIndex - maxSize > 0 ? firstIndex - maxSize : 0; //most left index
@@ -81,27 +82,27 @@ void reverse(char *str, int length) {
 
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
-char * uint256_format_as_hex( UInt256 val ) {
+char * uint256_format_as_hex( UInt256 val ){
   //loop through val and cover with bit mask
   char buffer[9];
-  int places;
+  int buckets;
 
   //find first group to not equal 0
   for (int i = 7; i >= 0; i--){
     if (val.data[i] != 0){
-      places = i + 1;
+      buckets = i + 1;
       break;
     } 
   }
-
-  //something is wrong with remainder!
-  int remainder = sprintf(buffer, "%x", val.data[places - 1]);
-  int totalChars = (places - 1) * 8 + remainder;
-  char *hex = malloc((sizeof(char) * (totalChars + 1))); //max 64 + 1
+  int remainder = sprintf(buffer, "%x", val.data[buckets - 1]);
+  int totalChars = (buckets - 1) * 8 + remainder;
+  char *hex = malloc((sizeof(char) * (totalChars)) + 1); //max 64 + 1
   hex[sizeof(char) * totalChars] = '\0';
+  printf("all: %d\n", totalChars);
+  printf("buck: %d\n", buckets);
 
-  for (int i = 0; i < places; i++){
-    int finalGroup = i == places - 1;
+  for (int i = 0; i < buckets; i++){
+    int finalGroup = i == buckets - 1;
     if (finalGroup){
       sprintf(buffer, "%x", val.data[i]);
     } 
@@ -109,32 +110,15 @@ char * uint256_format_as_hex( UInt256 val ) {
       sprintf(buffer, "%08x", val.data[i]);
     }
 
-    printf("buff %s\n", buffer);
+    //reverse the buffer then set malloc thing equal to it
 
     int bit = finalGroup ? remainder : 8;
-    for (int j = 0; j < bit; j++){
-      //going from lsb to msb
-      int hexIndex = (places - 1 - i) * 8 + j;
-      //remainder = 0 for some reason
-      if (bit != 8){
-        hex[hexIndex] = buffer[bit - 1 - j];
-      }
-      else{
-        hex[hexIndex] = buffer[8 - 1 - j];
-      }
-      
-      printf("val: %d\n", hexIndex);
-    }
 
   }
 
   for (int i = 0; i < (sizeof(char) * (totalChars + 1)); i++){
     printf("%c", hex[i]);
-    if (hex[i] == '\0'){
-      printf("WETF", hex[i+1]);
-    }
   }
-  printf("\n");
 
 
   // TODO: implement
