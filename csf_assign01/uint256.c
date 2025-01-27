@@ -62,7 +62,7 @@ UInt256 uint256_create_from_hex( const char *hex ) {
       temp[j] = newHex[(i * 8) + j];
     }
 
-    unsigned long int val = strtoul(temp, &endptr, 16);
+    unsigned long val = strtoul(temp, &endptr, 16);
     result.data[i] = val;
   }
   return result;
