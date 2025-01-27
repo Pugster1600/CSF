@@ -41,8 +41,8 @@ UInt256 uint256_create_from_hex( const char *hex ) {
   const int maxSize = 64;
   const int finalIndex = firstIndex - maxSize > 0 ? firstIndex - maxSize : 0; //most left index
   const int totalChars = firstIndex - finalIndex;
-  const int extraChars = totalChars % 8;
-  const int totalIterations = extraChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
+  const int finalBucketChars = totalChars % 8; //basically remainder
+  const int totalIterations = finalBucketChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
   char newHex[totalChars];
 
   //going in reverse order to fill in the newHex 
@@ -53,7 +53,7 @@ UInt256 uint256_create_from_hex( const char *hex ) {
 
   //converting 8 chars at a time
   for (int i = 0; i < totalIterations; i++){
-    int charIterations = totalChars - (i * 8) >= 8 ? 8 : extraChars;
+    int charIterations = totalChars - (i * 8) >= 8 ? 8 : finalBucketChars;
     char temp[charIterations + 1];
     temp[charIterations] = '\0';
     char * endptr;
