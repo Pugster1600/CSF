@@ -111,7 +111,6 @@ char * uint256_format_as_hex( UInt256 val ){
   for (int i = buckets - 1; i >= 0; i--){
     int finalGroup = i == buckets - 1;
     int charIters;
-    printf("current index %d\n", i);
     //start at msb
     if (finalGroup){
       sprintf(buffer, "%x", val.data[i]);
@@ -126,15 +125,7 @@ char * uint256_format_as_hex( UInt256 val ){
       hex[i * 8 + charIndex] = buffer[charIters - charIndex - 1];
       printf("cur %d\n", i * 8 + charIndex);
     }
-    printf("buff: %s\n", buffer);
-    printf("buff: %d\n", remainder);
-    printf("buff: %d\n", charIters);
   }
-  printf("total: %d\n", totalChars + 1);
-  for (int i = 0; i < totalChars; i++){
-    printf("%c", hex[i]);
-  }
-  printf("\n");
   return hex;
 }
 

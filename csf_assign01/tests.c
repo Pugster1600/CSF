@@ -72,7 +72,17 @@ void toHexTest(){
   data.data[4] = 0x0; 
   data.data[5] = 0x0;
   data.data[6] = 0x0;
-  data.data[7] = 0x0;
+  data.data[7] = 0xdeadbeef;
+
+  data.data[0] = 0x1;  // 0b10101010
+  data.data[1] = 0x0;  // 0b01010101
+  data.data[2] = 0x0;
+  data.data[3] = 0x0;
+  data.data[3] = 0x0;
+  data.data[4] = 0x0; 
+  data.data[5] = 0x0;
+  data.data[6] = 0x0;
+  data.data[7] = 3735928559;
 
   //data.data[0] = 0xfeebdaed;  // 0b10101010
   //data.data[1] = 0x5b00b;  // 0b01010101
@@ -85,7 +95,12 @@ void toHexTest(){
   //data.data[7] = 0x5b00b;
 
   char * val = uint256_format_as_hex(data);
-  printf("str: %s", val);
+  printf("str: %s\n", val);
+
+  UInt256 newVal = uint256_create_from_hex(val);
+  for (int i = 0; i < 8; i++){
+    printf("%d: %lu\n", i, newVal.data[i]);
+  }
   free(val);
 }
 int main(){
