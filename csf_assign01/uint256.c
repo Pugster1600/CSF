@@ -125,7 +125,7 @@ char * uint256_format_as_hex( UInt256 val ){
       charIters = 8;
     }
     
-    //filling in the malloc buffer from largest to smallest bucket
+    //filling in the malloc buffer from msb to lsb
     for (int charIndex = 0; charIndex < charIters; charIndex++){
       hex[i * 8 + charIndex] = buffer[charIters - charIndex - 1]; //printf("cur %d\n", i * 8 + charIndex);
     }
