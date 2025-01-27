@@ -37,31 +37,33 @@ UInt256 uint256_create_from_hex( const char *hex ) {
   //UInt256 result;
   UInt256 result = uint256_create_from_u32(0);
 
-  const int firstIndex = strlen(hex); //most right index
+  const int msbHexIndex = strlen(hex); //most right index
   const int maxSize = 64;
-  const int finalIndex = firstIndex - maxSize > 0 ? firstIndex - maxSize : 0; //most left index
-  const int totalChars = firstIndex - finalIndex;
+  const int lsbHexIndex = msbHexIndex - maxSize > 0 ? msbHexIndex - maxSize : 0; //most left index
+  const int totalChars = msbHexIndex - lsbHexIndex;
   const int finalBucketChars = totalChars % 8; //basically remainder
   const int totalIterations = finalBucketChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
   char newHex[totalChars];
 
   //going in reverse order to fill in the newHex 
-  for (int i = firstIndex; i > finalIndex; --i){
-    int newHexOffset = firstIndex - i;
-    newHex[newHexOffset] = hex[i - 1]; //newHexMaxIndex - newHexOffset -> int newHexMaxIndex = sizeof(newHex) - 1;
+  for (int i = msbHexIndex; i > lsbHexIndex; --i){
+    int newHexOffset = msbHexIndex - i; //going from 0 - totalChars
+    newHex[newHexOffset] = hex[i - 1];
   }
 
-  //converting 8 chars at a time
+  //iterating 8 chars at a time
   for (int i = 0; i < totalIterations; i++){
-    int charIterations = totalChars - (i * 8) >= 8 ? 8 : finalBucketChars;
+    int charIterations = totalChars - (i * 8) >= 8 ? 8 : finalBucketChars; 
     char temp[charIterations + 1];
     temp[charIterations] = '\0';
     char * endptr;
 
+    //filling in the 8 chars
     for (int j = 0; j < charIterations; j++){
-      temp[j] = newHex[(i * 8) + j];
+      temp[j] = newHex[(i * 8) + j]; //new hex is reversed string
     }
 
+    //convert the chars
     unsigned long val = strtoul(temp, &endptr, 16);
     result.data[i] = val;
   }
@@ -83,12 +85,11 @@ void reverse(char *str, int length) {
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char * uint256_format_as_hex( UInt256 val ){
-  //loop through val and cover with bit mask
   char buffer[9];
   int buckets = 0;
   char * hex;
 
-  //find first group to not equal 0
+  //1. find first msb that is non 0
   for (int i = 7; i >= 0; i--){
     if (val.data[i] != 0){
       buckets = i + 1;
@@ -96,6 +97,7 @@ char * uint256_format_as_hex( UInt256 val ){
     } 
   }
 
+  //2. if no buckets ie all 0 
   if (buckets == 0){
     hex = malloc(sizeof(char) * 2);
     hex[0] = '0';
@@ -103,15 +105,17 @@ char * uint256_format_as_hex( UInt256 val ){
     return hex;
   }
 
+  //3. create the malloc hex buffer
   int remainder = sprintf(buffer, "%x", val.data[buckets - 1]);
   int totalChars = (buckets - 1) * 8 + remainder;
-  hex = malloc((sizeof(char) * (totalChars)) + 1); //max 64 + 1
+  hex = malloc((sizeof(char) * (totalChars)) + 1); //max of 64 + 1 for \0
   hex[sizeof(char) * totalChars] = '\0';
   
+  //going through the array, starting from msb/finalGroup
   for (int i = buckets - 1; i >= 0; i--){
     int finalGroup = i == buckets - 1;
     int charIters;
-    //start at msb
+
     if (finalGroup){
       sprintf(buffer, "%x", val.data[i]);
       charIters = remainder;
@@ -120,10 +124,10 @@ char * uint256_format_as_hex( UInt256 val ){
       sprintf(buffer, "%08x", val.data[i]);
       charIters = 8;
     }
-    //8*i is buffer offset, -1 for index, charIndex for char offset -> go left
-    for (int charIndex = 0; charIndex < charIters; charIndex++){ //index of msb should be largest
-      hex[i * 8 + charIndex] = buffer[charIters - charIndex - 1];
-      printf("cur %d\n", i * 8 + charIndex);
+    
+    //filling in the malloc buffer from largest to smallest bucket
+    for (int charIndex = 0; charIndex < charIters; charIndex++){
+      hex[i * 8 + charIndex] = buffer[charIters - charIndex - 1]; //printf("cur %d\n", i * 8 + charIndex);
     }
   }
   return hex;
