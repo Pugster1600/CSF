@@ -47,9 +47,12 @@ void fromHexTest(){
   //char string[100] = "ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff";
   char string[100] = "deadbeeff";
   //uint256_create_from_hex("fdeadbeef");
-  uint256_create_from_hex("afeebdaed");
-  uint256_create_from_hex("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
+  UInt256 val = uint256_create_from_hex("afeebdaed000");
+  //uint256_create_from_hex("deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
   //int x = strlen(string);
+  for (int i = 0; i < 8; i++){
+    printf("%lu", val.data[i]);
+  }
 }
 
 void toHexTest(){
@@ -105,7 +108,7 @@ void toHexTest(){
 }
 int main(){
   //isBitSetTest();
-  //fromHexTest();
-  toHexTest();
+  fromHexTest();
+  //toHexTest();
   return 0;
 }

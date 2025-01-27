@@ -9,11 +9,10 @@
 // all other bits are set to 0.
 UInt256 uint256_create_from_u32( uint32_t val ) {
   UInt256 result;
-  unsigned long iterations = sizeof(result.data) / sizeof(result.data[0]);
-
   // TODO: implement
+
   result.data[0] = val;
-  for (unsigned long i = 1; i < iterations; ++i) {
+  for (unsigned long i = 1; i < 8; ++i) {
     result.data[i] = 0;
   }
 
@@ -26,7 +25,7 @@ UInt256 uint256_create_from_u32( uint32_t val ) {
 UInt256 uint256_create( const uint32_t data[8] ) {
   UInt256 result;
   // TODO: implement
-  for (long unsigned int i = 0; i < sizeof(result.data)-1; ++i){
+  for (int i = 0; i < 8; ++i){
     result.data[i] = data[i];
   }
   return result;
@@ -35,7 +34,12 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex( const char *hex ) {
   //UInt256 result;
+  //strip away the leading 0s and whatnot
   UInt256 result = uint256_create_from_u32(0);
+  char reversed[strlen(hex) + 1];
+  memcpy(reversed, hex, strlen(hex) + 1);
+  reverse(reversed, strlen(reversed) + 1);
+  printf("str: %s\n", reversed);
 
   const int msbHexIndex = strlen(hex); //most right index
   const int maxSize = 64;
@@ -191,3 +195,7 @@ UInt256 uint256_lshift( UInt256 val, unsigned shift ) {
   // TODO: implement
   return result;
 }
+
+//zip -9r solution.zip Makefile tctest.c tctest.h uint256.c uint256.h uint256_tests.c README.txt
+//scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign01/solution.zip .
+//valgrind --leak-check=full --show-leak-kinds=all ./uint256.c
