@@ -107,23 +107,34 @@ char * uint256_format_as_hex( UInt256 val ){
   int totalChars = (buckets - 1) * 8 + remainder;
   hex = malloc((sizeof(char) * (totalChars)) + 1); //max 64 + 1
   hex[sizeof(char) * totalChars] = '\0';
-
+  
   for (int i = buckets - 1; i >= 0; i--){
     int finalGroup = i == buckets - 1;
     int charIters;
+    printf("current index %d\n", i);
+    //start at msb
     if (finalGroup){
-      sprintf(buffer, "%x", val.data[7 - i]);
+      sprintf(buffer, "%x", val.data[i]);
       charIters = remainder;
     } 
     else{
-      sprintf(buffer, "%08x", val.data[7 - i]);
+      sprintf(buffer, "%08x", val.data[i]);
       charIters = 8;
     }
-    //8*i is buffer offset, -1 for index, charIndex for char offset
-    for (int charIndex = 0; charIndex < charIters; charIndex++){
-      hex[totalChars - (8 * i) - charIndex - 1]= buffer[charIndex]; 
+    //8*i is buffer offset, -1 for index, charIndex for char offset -> go left
+    for (int charIndex = 0; charIndex < charIters; charIndex++){ //index of msb should be largest
+      hex[i * 8 + charIndex] = buffer[charIters - charIndex - 1];
+      printf("cur %d\n", i * 8 + charIndex);
     }
+    printf("buff: %s\n", buffer);
+    printf("buff: %d\n", remainder);
+    printf("buff: %d\n", charIters);
   }
+  printf("total: %d\n", totalChars + 1);
+  for (int i = 0; i < totalChars; i++){
+    printf("%c", hex[i]);
+  }
+  printf("\n");
   return hex;
 }
 

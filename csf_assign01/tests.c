@@ -74,6 +74,16 @@ void toHexTest(){
   data.data[6] = 0x0;
   data.data[7] = 0x0;
 
+  //data.data[0] = 0xfeebdaed;  // 0b10101010
+  //data.data[1] = 0x5b00b;  // 0b01010101
+  //data.data[2] = 0xfeebdaed;
+  //data.data[3] = 0x5b00b;
+  //data.data[3] = 0xfeebdaed;
+  //data.data[4] = 0x5b00b; 
+  //data.data[5] = 0xfeebdaed;
+  //data.data[6] = 0x5b00b;
+  //data.data[7] = 0x5b00b;
+
   char * val = uint256_format_as_hex(data);
   printf("str: %s", val);
   free(val);
