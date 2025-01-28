@@ -50,6 +50,80 @@ void test_neg_overflow( TestObjs *objs );
 void test_mul( TestObjs *objs );
 void test_lshift( TestObjs *objs );
 
+void isBitSetTest(){
+  UInt256 data;
+  data.data[0] = 0xAA;  // 0b10101010
+  data.data[1] = 0x55;  // 0b01010101
+  data.data[7] = 0x55;  // 0b01010101
+
+  int shift = 0;
+  int bit0 = uint256_is_bit_set(data, (shift*32) + 0);
+  int bit1 = uint256_is_bit_set(data, (shift*32) + 1);
+  int bit2 = uint256_is_bit_set(data, (shift*32) + 2);
+  int bit3 = uint256_is_bit_set(data, (shift*32) + 3);
+  int bit4 = uint256_is_bit_set(data, (shift*32) + 4);
+  int bit5 = uint256_is_bit_set(data, (shift*32) + 5);
+  int bit6 = uint256_is_bit_set(data, (shift*32) + 6);
+  int bit7 = uint256_is_bit_set(data, (shift*32) + 7);
+  printf("predicted: 0b10101010. Actual: 0b%d%d%d%d%d%d%d%d\n", bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0);
+
+  shift = 1;
+  bit0 = uint256_is_bit_set(data, (shift*32) + 0);
+  bit1 = uint256_is_bit_set(data, (shift*32) + 1);
+  bit2 = uint256_is_bit_set(data, (shift*32) + 2);
+  bit3 = uint256_is_bit_set(data, (shift*32) + 3);
+  bit4 = uint256_is_bit_set(data, (shift*32) + 4);
+  bit5 = uint256_is_bit_set(data, (shift*32) + 5);
+  bit6 = uint256_is_bit_set(data, (shift*32) + 6);
+  bit7 = uint256_is_bit_set(data, (shift*32) + 7);
+  printf("predicted: 0b01010101. Actual: 0b%d%d%d%d%d%d%d%d\n", bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0);
+
+  shift = 7;
+  bit0 = uint256_is_bit_set(data, (shift*32) + 0);
+  bit1 = uint256_is_bit_set(data, (shift*32) + 1);
+  bit2 = uint256_is_bit_set(data, (shift*32) + 2);
+  bit3 = uint256_is_bit_set(data, (shift*32) + 3);
+  bit4 = uint256_is_bit_set(data, (shift*32) + 4);
+  bit5 = uint256_is_bit_set(data, (shift*32) + 5);
+  bit6 = uint256_is_bit_set(data, (shift*32) + 6);
+  bit7 = uint256_is_bit_set(data, (shift*32) + 7);
+  printf("predicted: 0b01010101. Actual: 0b%d%d%d%d%d%d%d%d\n", bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0);
+}
+
+void fromHexTest(){
+  //char string[100] = "ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff";
+  char string[100] = "deadbeeff";
+  //uint256_create_from_hex("fdeadbeef");
+  //UInt256 val = uint256_create_from_hex("11111111222222223333333344444444555555556666666677777777888888880000");
+  //UInt256 val = uint256_create_from_hex("adbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef0000");
+  //UInt256 val = uint256_create_from_hex("11111111222222223333333344444444555555556666666677777777888888880000");
+  UInt256 val = uint256_create_from_hex("000000000000000000000000000000000000000000000000000000000000000000000");
+
+}
+
+void toHexTest(){
+  UInt256 data = uint256_create_from_u32(0);
+
+  data.data[0] = 0xfeebdaed;  // 0b10101010
+  data.data[1] = 0x5b00b;  // 0b01010101
+  data.data[2] = 0xfeebdaed;
+  data.data[3] = 0x5b00b;
+  data.data[3] = 0xfeebdaed;
+  data.data[4] = 0x5b00b; 
+  data.data[5] = 0xfeebdaed;
+  data.data[6] = 0x5b00b;
+  data.data[7] = 0x5b00b;
+
+  char * val = uint256_format_as_hex(data);
+  printf("str: %s\n", val);
+
+  UInt256 newVal = uint256_create_from_hex(val);
+  for (int i = 0; i < 8; i++){
+    printf("%d: %lu\n", i, newVal.data[i]);
+  }
+  free(val);
+}
+
 int main( int argc, char **argv ) {
   if ( argc > 1 )
     tctest_testname_to_execute = argv[1];
@@ -68,6 +142,8 @@ int main( int argc, char **argv ) {
   TEST( test_neg_overflow );
   TEST( test_mul );
   TEST( test_lshift );
+
+  fromHexTest();
 
   TEST_FINI();
 }

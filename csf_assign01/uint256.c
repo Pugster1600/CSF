@@ -33,56 +33,42 @@ UInt256 uint256_create( const uint32_t data[8] ) {
 
 // Create a UInt256 value from a string of hexadecimal digits.
 UInt256 uint256_create_from_hex( const char *hex ) {
-  //UInt256 result;
-  //strip away the leading 0s and whatnot
+  //write psuedo code
   UInt256 result = uint256_create_from_u32(0);
-  char reversed[strlen(hex) + 1];
-  memcpy(reversed, hex, strlen(hex) + 1);
-  reverse(reversed, strlen(reversed) + 1);
-  printf("str: %s\n", reversed);
-
-  const int msbHexIndex = strlen(hex); //most right index
+  
+  const int lsbHexIndex = strlen(hex) - 1; //most right index
   const int maxSize = 64;
-  const int lsbHexIndex = msbHexIndex - maxSize > 0 ? msbHexIndex - maxSize : 0; //most left index
-  const int totalChars = msbHexIndex - lsbHexIndex;
+  const int msbHexIndex = lsbHexIndex - maxSize > 0 ? lsbHexIndex - (maxSize - 1): 0; //most left index
+  const int totalChars = (lsbHexIndex - msbHexIndex) + 1;
   const int finalBucketChars = totalChars % 8; //basically remainder
   const int totalIterations = finalBucketChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
-  char newHex[totalChars];
-
-  //going in reverse order to fill in the newHex 
-  for (int i = msbHexIndex; i > lsbHexIndex; --i){
-    int newHexOffset = msbHexIndex - i; //going from 0 - totalChars
-    newHex[newHexOffset] = hex[i - 1];
-  }
 
   //iterating 8 chars at a time
+  int index = totalChars - 1;
   for (int i = 0; i < totalIterations; i++){
     int charIterations = totalChars - (i * 8) >= 8 ? 8 : finalBucketChars; 
     char temp[charIterations + 1];
     temp[charIterations] = '\0';
-    char * endptr;
 
     //filling in the 8 chars
     for (int j = 0; j < charIterations; j++){
-      temp[j] = newHex[(i * 8) + j]; //new hex is reversed string
+      temp[(charIterations - 1) - j] = hex[index];
+      index--;
     }
 
     //convert the chars
-    unsigned long val = strtoul(temp, &endptr, 16);
+    unsigned long val = strtoul(temp, NULL, 16);
     result.data[i] = val;
+    printf("\n%s\n", temp);
   }
+
   return result;
 }
 
-void reverse(char *str, int length) {
-  int start = 0;
-  int end = length - 1;
-  while (start < end) {
-    char temp = str[start];
-    str[start] = str[end];
-    str[end] = temp;
-    start++;
-    end--;
+void reverse(char * src, char * desti, int length) {
+  int maxIndex = length - 1;
+  for (int i = maxIndex; i >= 0; --i){
+    desti[maxIndex - i] = src[i];
   }
 }
 
@@ -129,7 +115,7 @@ char * uint256_format_as_hex( UInt256 val ){
       charIters = 8;
     }
     
-    //filling in the malloc buffer from msb to lsb
+    //filling in the malloc buffer from msb to msb
     for (int charIndex = 0; charIndex < charIters; charIndex++){
       hex[i * 8 + charIndex] = buffer[charIters - charIndex - 1]; //printf("cur %d\n", i * 8 + charIndex);
     }
