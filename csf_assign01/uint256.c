@@ -119,7 +119,6 @@ char * uint256_format_as_hex( UInt256 val ){
       //total - previous iter offset - current iter offset + increment
       hex[totalChars - (i * 8) - charIters + charIndex] = buffer[charIndex];
     }
-    
   }
   return hex;
 }
