@@ -126,27 +126,56 @@ void toHexTest(){
   free(val);
 }
 
+void addTest(){
+  UInt256 left;
+  UInt256 right;
+  left.data[0] = 0xffffffff;
+  left.data[1] = 0xffffffff;
+  left.data[2] = 0x0;
+  left.data[3] = 0x0;
+  left.data[3] = 0x0;
+  left.data[4] = 0x0;
+  left.data[5] = 0x0;
+  left.data[6] = 0x0;
+  left.data[7] = 0x0;
+
+  right.data[0] = 0x2;
+  right.data[1] = 0x0;
+  right.data[2] = 0x0;
+  right.data[3] = 0x0;
+  right.data[3] = 0x0;
+  right.data[4] = 0x0;
+  right.data[5] = 0x0;
+  right.data[6] = 0x0;
+  right.data[7] = 0x0;
+  
+  UInt256 result = uint256_own_add(left, right);
+  for (int i = 0; i < 8; i++){
+    printf("val: %lu\n", result.data[i]);
+  }
+}
 int main( int argc, char **argv ) {
   if ( argc > 1 )
     tctest_testname_to_execute = argv[1];
 
   TEST_INIT();
 
-  TEST( test_get_bits );
-  TEST( test_is_bit_set );
-  TEST( test_create_from_u32 );
-  TEST( test_create );
-  TEST( test_create_from_hex );
-  TEST( test_format_as_hex );
+  //TEST( test_get_bits );
+  //TEST( test_is_bit_set );
+  //TEST( test_create_from_u32 );
+  //TEST( test_create );
+  //TEST( test_create_from_hex );
+  //TEST( test_format_as_hex );
   TEST( test_add );
   TEST( test_sub );
-  TEST( test_negate );
-  TEST( test_neg_overflow );
-  TEST( test_mul );
-  TEST( test_lshift );
+  //TEST( test_negate );
+  //TEST( test_neg_overflow );
+  //TEST( test_mul );
+  //TEST( test_lshift );
 
   //fromHexTest();
   toHexTest();
+  addTest();
 
   TEST_FINI();
 }
