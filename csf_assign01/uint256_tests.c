@@ -104,23 +104,25 @@ void fromHexTest(){
 void toHexTest(){
   UInt256 data = uint256_create_from_u32(0);
 
-  data.data[0] = 0xfeebdaed;  // 0b10101010
-  data.data[1] = 0x5b00b;  // 0b01010101
-  data.data[2] = 0xfeebdaed;
-  data.data[3] = 0x5b00b;
-  data.data[3] = 0xfeebdaed;
-  data.data[4] = 0x5b00b; 
-  data.data[5] = 0xfeebdaed;
-  data.data[6] = 0x5b00b;
-  data.data[7] = 0x5b00b;
+  //data.data[0] = 0xdeadbeef;  // 0b10101010
+  //data.data[1] = 0xb00b5;  // 0b01010101
+  //data.data[2] = 0xdeadbeef;
+  //data.data[3] = 0xb00b5;
+  //data.data[3] = 0xdeadbeef;
+  //data.data[4] = 0xb00b5; 
+  //data.data[5] = 0xfeebdaed;
+  //data.data[6] = 0xb00b5;
+  //data.data[7] = 0xb00b5;
+
+  data.data[0] = 0x12345678;  // 0b10101010
 
   char * val = uint256_format_as_hex(data);
   printf("str: %s\n", val);
 
-  UInt256 newVal = uint256_create_from_hex(val);
-  for (int i = 0; i < 8; i++){
-    printf("%d: %lu\n", i, newVal.data[i]);
-  }
+  //UInt256 newVal = uint256_create_from_hex(val);
+  //for (int i = 0; i < 8; i++){
+  //  printf("%d: %lu\n", i, newVal.data[i]);
+  //}
   free(val);
 }
 
@@ -143,7 +145,8 @@ int main( int argc, char **argv ) {
   TEST( test_mul );
   TEST( test_lshift );
 
-  fromHexTest();
+  //fromHexTest();
+  toHexTest();
 
   TEST_FINI();
 }

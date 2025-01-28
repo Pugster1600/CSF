@@ -96,13 +96,13 @@ char * uint256_format_as_hex( UInt256 val ){
   }
 
   //3. create the malloc hex buffer
-  int remainder = sprintf(buffer, "%x", val.data[buckets - 1]);
-  int totalChars = (buckets - 1) * 8 + remainder;
+  const int remainder = sprintf(buffer, "%x", val.data[buckets - 1]);
+  const int totalChars = (buckets - 1) * 8 + remainder;
   hex = malloc((sizeof(char) * (totalChars)) + 1); //max of 64 + 1 for \0
   hex[sizeof(char) * totalChars] = '\0';
   
   //going through the array, starting from msb/finalGroup
-  for (int i = buckets - 1; i >= 0; i--){
+  for (int i = 0; i < buckets; i++){
     int finalGroup = i == buckets - 1;
     int charIters;
 
@@ -114,11 +114,12 @@ char * uint256_format_as_hex( UInt256 val ){
       sprintf(buffer, "%08x", val.data[i]);
       charIters = 8;
     }
-    
     //filling in the malloc buffer from msb to msb
     for (int charIndex = 0; charIndex < charIters; charIndex++){
-      hex[i * 8 + charIndex] = buffer[charIters - charIndex - 1]; //printf("cur %d\n", i * 8 + charIndex);
+      //total - previous iter offset - current iter offset + increment
+      hex[totalChars - (i * 8) - charIters + charIndex] = buffer[charIndex];
     }
+    
   }
   return hex;
 }
