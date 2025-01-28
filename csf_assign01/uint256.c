@@ -70,6 +70,7 @@ void reverse(char * src, char * desti, int length) {
   for (int i = maxIndex; i >= 0; --i){
     desti[maxIndex - i] = src[i];
   }
+  desti[length] = '\0';
 }
 
 // Return a dynamically-allocated string of hex digits representing the
@@ -153,6 +154,12 @@ UInt256 uint256_add( UInt256 left, UInt256 right ) {
   return sum;
 }
 
+UInt256 uint256_own_add( UInt256 left, UInt256 right ) {
+  UInt256 sum;
+  // TODO: implement
+  return sum;
+}
+
 // Compute the difference of two UInt256 values.
 UInt256 uint256_sub( UInt256 left, UInt256 right ) {
   UInt256 result;
@@ -164,8 +171,11 @@ UInt256 uint256_sub( UInt256 left, UInt256 right ) {
 UInt256 uint256_negate( UInt256 val ) {
   UInt256 result;
   // TODO: implement
-  //toggle each bit with xor then + 1
-  return result;
+  for (int i = 0; i < 8; i++){
+    result.data[i] = ~val.data[i];
+  }
+
+  return uint256_add(result, uint256_create_from_u32(1));
 }
 
 // Compute the product of two UInt256 values.
