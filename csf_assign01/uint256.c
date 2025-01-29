@@ -163,7 +163,6 @@ UInt256 uint256_negate( UInt256 val ) {
   for (int i = 0; i < 8; i++){
     result.data[i] = ~val.data[i];
   }
-
   return uint256_add(result, uint256_create_from_u32(1));
 }
 

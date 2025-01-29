@@ -107,6 +107,18 @@ UInt256 uint256_own_add( UInt256 left, UInt256 right ) {
   return sum;
 }
 
+UInt256 uint256_add( UInt256 left, UInt256 right ) {
+  UInt256 sum;
+  int carry = 0;
+  // TODO: implement
+  for (int i = 0; i < 8; i++){
+    uint32_t addResult = left.data[i] + right.data[i] + carry;
+    carry = ((addResult < left.data[i]) || (addResult < right.data[i])) ? 1 : 0;
+    sum.data[i] = addResult;
+  }
+  return sum;
+}
+
 void addTest(){
   UInt256 left;
   UInt256 right;
