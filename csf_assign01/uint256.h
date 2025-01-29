@@ -59,6 +59,4 @@ UInt256 uint256_lshift( UInt256 val, unsigned shift);
 
 void reverse(char * src, char * desti, int length);
 
-UInt256 uint256_own_add( UInt256 left, UInt256 right );
-
 #endif // UINT256_H
