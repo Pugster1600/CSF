@@ -106,3 +106,50 @@ UInt256 uint256_own_add( UInt256 left, UInt256 right ) {
   }
   return sum;
 }
+
+void addTest(){
+  UInt256 left;
+  UInt256 right;
+  left.data[0] = 0xffffffff;
+  left.data[1] = 0xffffffff;
+  left.data[2] = 0x0;
+  left.data[3] = 0x0;
+  left.data[3] = 0x0;
+  left.data[4] = 0x0;
+  left.data[5] = 0x0;
+  left.data[6] = 0x0;
+  left.data[7] = 0x0;
+
+  right.data[0] = 0x2;
+  right.data[1] = 0x0;
+  right.data[2] = 0x0;
+  right.data[3] = 0x0;
+  right.data[3] = 0x0;
+  right.data[4] = 0x0;
+  right.data[5] = 0x0;
+  right.data[6] = 0x0;
+  right.data[7] = 0x0;
+  
+  UInt256 result = uint256_own_add(left, right);
+  for (int i = 0; i < 8; i++){
+    printf("val: %lu\n", result.data[i]);
+  }
+}
+
+#represents the target aka own_tests ie the resulting linking + compiling is own_test
+#if i changed own_tests to tests, the resulting would be tests
+
+//zip -9r solution.zip Makefile tctest.c tctest.h uint256.c uint256.h uint256_tests.c README.txt
+//scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign01/solution.zip .
+//valgrind --leak-check=full --show-leak-kinds=all ./uint256.c
+
+
+void reverse(char * src, char * desti, int length);
+
+void reverse(char * src, char * desti, int length) {
+  int maxIndex = length - 1;
+  for (int i = maxIndex; i >= 0; --i){
+    desti[maxIndex - i] = src[i];
+  }
+  desti[length] = '\0';
+}

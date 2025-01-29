@@ -65,14 +65,6 @@ UInt256 uint256_create_from_hex( const char *hex ) {
   return result;
 }
 
-void reverse(char * src, char * desti, int length) {
-  int maxIndex = length - 1;
-  for (int i = maxIndex; i >= 0; --i){
-    desti[maxIndex - i] = src[i];
-  }
-  desti[length] = '\0';
-}
-
 // Return a dynamically-allocated string of hex digits representing the
 // given UInt256 value.
 char * uint256_format_as_hex( UInt256 val ){
@@ -188,7 +180,3 @@ UInt256 uint256_lshift( UInt256 val, unsigned shift ) {
   // TODO: implement
   return result;
 }
-
-//zip -9r solution.zip Makefile tctest.c tctest.h uint256.c uint256.h uint256_tests.c README.txt
-//scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign01/solution.zip .
-//valgrind --leak-check=full --show-leak-kinds=all ./uint256.c

@@ -6,9 +6,6 @@ OBJS = $(SRCS:%.c=%.o)
 
 all : uint256_tests
 
-#represents the target aka own_tests ie the resulting linking + compiling is own_test
-#if i changed own_tests to tests, the resulting would be tests
-
 uint256_tests : $(OBJS)
 	$(CC) -o $@ $(OBJS)
 
@@ -20,7 +17,5 @@ depend :
 
 depend.mak :
 	touch $@
-
-
 
 include depend.mak
