@@ -18,4 +18,10 @@ depend :
 depend.mak :
 	touch $@
 
+valgrind: uint256_tests
+	valgrind --leak-check=full --show-leak-kinds=all ./uint256_tests
+
+gdb: uint256_tests
+	gdb ./uint256_tests
+
 include depend.mak
