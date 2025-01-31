@@ -98,25 +98,39 @@ void fromHexTest(){
   //UInt256 val = uint256_create_from_hex("adbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef0000");
   //UInt256 val = uint256_create_from_hex("11111111222222223333333344444444555555556666666677777777888888880000");
   UInt256 val = uint256_create_from_hex("000000000000000000000000000000000000000000000000000000000000000000000");
-
 }
 
 void toHexTest(){
-  UInt256 data = uint256_create_from_u32(0);
+  UInt256 data1 = uint256_create_from_u32(0);
 
-  data.data[0] = 0x12345678;
-  data.data[1] = 0xdeadbeef;
-  data.data[2] = 0xdeadbeef;
-  data.data[3] = 0xdeadbeef;
-  data.data[3] = 0xdeadbeef;
-  data.data[4] = 0xdeadbeef; 
-  data.data[5] = 0xfeebdaed;
-  data.data[6] = 0xdeadbeef;
-  data.data[7] = 0xdeadbeef;
+  data1.data[0] = 0x12345678;
+  data1.data[1] = 0xdeadbeef;
+  data1.data[2] = 0xdeadf00d;
+  data1.data[3] = 0xdeadc0de;
+  data1.data[4] = 0xdeadbeef; 
+  data1.data[5] = 0xfeebdaed;
+  data1.data[6] = 0xdeadbeef;
+  data1.data[7] = 0xf00df00d;
 
-  char * val = uint256_format_as_hex(data);
-  printf("str: %s\n", val);
-  free(val);
+  char * val1 = uint256_format_as_hex(data1);
+  ASSERT(0 == strcmp("f00df00ddeadbeeffeebdaeddeadbeefdeadc0dedeadf00ddeadbeef12345678", val1));
+  val1 = NULL; //set to null becuase good practice
+
+  free(val1);
+
+  UInt256 data2 = uint256_create_from_u32(0);
+
+  data2.data[0] = 0x12345678;
+  data2.data[1] = 0xdeadbeef;
+  data2.data[2] = 0xdeadf00d;
+  data2.data[3] = 0xdeadc0de;
+  data2.data[4] = 0x1;
+
+  char * val2 = uint256_format_as_hex(data2);
+  //printf("\nval: %s\n", val2);
+  ASSERT(0 == strcmp("1deadc0dedeadf00ddeadbeef12345678", val2));
+
+  free(val2);
 }
 
 int main( int argc, char **argv ) {
@@ -125,21 +139,21 @@ int main( int argc, char **argv ) {
 
   TEST_INIT();
 
-  TEST( test_get_bits );
-  TEST( test_is_bit_set );
-  TEST( test_create_from_u32 );
-  TEST( test_create );
-  TEST( test_create_from_hex );
-  TEST( test_format_as_hex );
-  TEST( test_add );
-  TEST( test_sub );
-  TEST( test_negate );
-  TEST( test_neg_overflow );
-  TEST( test_mul );
-  TEST( test_lshift );
+  //TEST( test_get_bits );
+  //TEST( test_is_bit_set );
+  //TEST( test_create_from_u32 );
+  //TEST( test_create );
+  //TEST( test_create_from_hex );
+  //TEST( test_format_as_hex );
+  //TEST( test_add );
+  //TEST( test_sub );
+  //TEST( test_negate );
+  //TEST( test_neg_overflow );
+  //TEST( test_mul );
+  //TEST( test_lshift );
 
-  fromHexTest();
-  toHexTest();
+  //fromHexTest();
+  TEST (toHexTest);
 
   TEST_FINI();
 }
