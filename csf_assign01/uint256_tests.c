@@ -142,7 +142,6 @@ void toHexTest(){
 
   char * val1 = uint256_format_as_hex(data1);
   ASSERT(0 == strcmp("f00df00ddeadbeeffeebdaeddeadbeefdeadc0dedeadf00ddeadbeef12345678", val1));
-  val1 = NULL; //set to null becuase good practice
 
   free(val1);
 
@@ -157,7 +156,6 @@ void toHexTest(){
   char * val2 = uint256_format_as_hex(data2);
   //printf("\nval: %s\n", val2);
   ASSERT(0 == strcmp("1deadc0dedeadf00ddeadbeef12345678", val2));
-
   free(val2);
 }
 
