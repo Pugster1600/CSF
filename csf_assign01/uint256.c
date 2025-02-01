@@ -44,7 +44,7 @@ UInt256 uint256_create_from_hex( const char *hex ) {
   const int totalIterations = finalBucketChars == 0 ? (totalChars / 8) : (totalChars / 8) + 1;
 
   //iterating 8 chars at a time
-  int index = totalChars - 1;
+  int index = lsbHexIndex;//totalChars - 1
   for (int i = 0; i < totalIterations; i++){
     int charIterations = totalChars - (i * 8) >= 8 ? 8 : finalBucketChars; 
     char temp[charIterations + 1];
@@ -52,6 +52,7 @@ UInt256 uint256_create_from_hex( const char *hex ) {
 
     //filling in the 8 chars
     for (int j = 0; j < charIterations; j++){
+      printf("index: %d\n", index);
       temp[(charIterations - 1) - j] = hex[index];
       index--;
     }
@@ -59,7 +60,7 @@ UInt256 uint256_create_from_hex( const char *hex ) {
     //convert the chars
     unsigned long val = strtoul(temp, NULL, 16);
     result.data[i] = val;
-    printf("\n%s\n", temp);
+    //printf("string val: %s\n", temp);
   }
 
   return result;
@@ -142,7 +143,13 @@ int uint256_is_bit_set( UInt256 val, unsigned index) {
 // Compute the sum of two UInt256 values.
 UInt256 uint256_add( UInt256 left, UInt256 right ) {
   UInt256 sum;
+  int carry = 0;
   // TODO: implement
+  for (int i = 0; i < 8; i++){
+    uint32_t addResult = left.data[i] + right.data[i] + carry;
+    carry = ((addResult < left.data[i]) || (addResult < right.data[i])) ? 1 : 0;
+    sum.data[i] = addResult;
+  }
   return sum;
 }
 

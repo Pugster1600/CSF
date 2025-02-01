@@ -91,13 +91,41 @@ void isBitSetTest(){
 }
 
 void fromHexTest(){
-  //char string[100] = "ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff ffffffff";
-  char string[100] = "deadbeeff";
-  //uint256_create_from_hex("fdeadbeef");
-  //UInt256 val = uint256_create_from_hex("11111111222222223333333344444444555555556666666677777777888888880000");
-  //UInt256 val = uint256_create_from_hex("adbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef0000");
-  //UInt256 val = uint256_create_from_hex("11111111222222223333333344444444555555556666666677777777888888880000");
-  UInt256 val = uint256_create_from_hex("000000000000000000000000000000000000000000000000000000000000000000000");
+  UInt256 val1 = uint256_create_from_hex("f00df00ddeadbeeffeebdaeddeadbeefdeadc0dedeadf00ddeadbeef12345678");
+  //for (int i = 0; i < 8; i++){
+  //  printf("%lu\n", val1.data[i]);
+  //}
+  ASSERT (val1.data[0] == 0x12345678);
+  ASSERT (val1.data[1] == 0xdeadbeef);
+  ASSERT (val1.data[2] == 0xdeadf00d);
+  ASSERT (val1.data[3] == 0xdeadc0de);
+  ASSERT (val1.data[4] == 0xdeadbeef); 
+  ASSERT (val1.data[5] == 0xfeebdaed);
+  ASSERT (val1.data[6] == 0xdeadbeef);
+  ASSERT (val1.data[7] == 0xf00df00d);
+
+  UInt256 val2 = uint256_create_from_hex("00000000f00df00ddeadbeeffeebdaeddeadbeefdeadc0dedeadf00ddeadbeef12345678");
+  //for (int i = 0; i < 8; i++){
+  //  printf("val: %lu\n", val2.data[i]);
+  //}
+  ASSERT (val2.data[0] == 0x12345678);
+  ASSERT (val2.data[1] == 0xdeadbeef);
+  ASSERT (val2.data[2] == 0xdeadf00d);
+  ASSERT (val2.data[3] == 0xdeadc0de);
+  ASSERT (val2.data[4] == 0xdeadbeef); 
+  ASSERT (val2.data[5] == 0xfeebdaed);
+  ASSERT (val2.data[6] == 0xdeadbeef);
+  ASSERT (val2.data[7] == 0xf00df00d);
+
+  UInt256 val3 = uint256_create_from_hex("1deadc0dedeadf00ddeadbeef12345678");
+  ASSERT (val3.data[0] == 0x12345678);
+  ASSERT (val3.data[1] == 0xdeadbeef);
+  ASSERT (val3.data[2] == 0xdeadf00d);
+  ASSERT (val3.data[3] == 0xdeadc0de);
+  ASSERT (val3.data[4] == 0x1); 
+  ASSERT (val3.data[5] == 0x0);
+  ASSERT (val3.data[6] == 0x0);
+  ASSERT (val3.data[7] == 0x0);
 }
 
 void toHexTest(){
@@ -133,27 +161,154 @@ void toHexTest(){
   free(val2);
 }
 
+void addTest(){
+  UInt256 left;
+  UInt256 right;
+  left.data[0] = 0xffffffff;
+  left.data[1] = 0xffffffff;
+  left.data[2] = 0x0;
+  left.data[3] = 0x0;
+  left.data[3] = 0x0;
+  left.data[4] = 0x0;
+  left.data[5] = 0x0;
+  left.data[6] = 0x0;
+  left.data[7] = 0x0;
+
+  right.data[0] = 0x2;
+  right.data[1] = 0x0;
+  right.data[2] = 0x0;
+  right.data[3] = 0x0;
+  right.data[3] = 0x0;
+  right.data[4] = 0x0;
+  right.data[5] = 0x0;
+  right.data[6] = 0x0;
+  right.data[7] = 0x0;
+
+  UInt256 sum = uint256_add(left, right);
+
+  ASSERT (sum.data[0] == 0x1);
+  ASSERT (sum.data[1] == 0x0);
+  ASSERT (sum.data[2] == 0x1);
+  ASSERT (sum.data[3] == 0x0);
+  ASSERT (sum.data[4] == 0x0); 
+  ASSERT (sum.data[5] == 0x0);
+  ASSERT (sum.data[6] == 0x0);
+  ASSERT (sum.data[7] == 0x0);
+
+  left.data[0] = 0xffffffff;
+  left.data[1] = 0xffffffff;
+  left.data[2] = 0xffffffff;
+  left.data[3] = 0xffffffff;
+  left.data[3] = 0xffffffff;
+  left.data[4] = 0xffffffff;
+  left.data[5] = 0xffffffff;
+  left.data[6] = 0xffffffff;
+  left.data[7] = 0xffffffff;
+
+  right.data[0] = 0x2;
+  right.data[1] = 0x0;
+  right.data[2] = 0x0;
+  right.data[3] = 0x0;
+  right.data[3] = 0x0;
+  right.data[4] = 0x0;
+  right.data[5] = 0x0;
+  right.data[6] = 0x0;
+  right.data[7] = 0x0;
+
+  sum = uint256_add(left, right);
+  ASSERT (sum.data[0] == 0x1);
+  ASSERT (sum.data[1] == 0x0);
+  ASSERT (sum.data[2] == 0x0);
+  ASSERT (sum.data[3] == 0x0);
+  ASSERT (sum.data[4] == 0x0); 
+  ASSERT (sum.data[5] == 0x0);
+  ASSERT (sum.data[6] == 0x0);
+  ASSERT (sum.data[7] == 0x0);
+
+  left.data[0] = 0x11111111;
+  left.data[1] = 0xfffffffe;
+  left.data[2] = 0x0;
+  left.data[3] = 0x11111111;
+  left.data[3] = 0x11111111;
+  left.data[4] = 0x11111111;
+  left.data[5] = 0x11111111;
+  left.data[6] = 0x11111111;
+  left.data[7] = 0x11111111;
+
+  right.data[0] = 0x11111111;
+  right.data[1] = 0x3;
+  right.data[2] = 0x1;
+  right.data[3] = 0x11111111;
+  right.data[3] = 0x11111111;
+  right.data[4] = 0x11111111;
+  right.data[5] = 0x11111111;
+  right.data[6] = 0x11111111;
+  right.data[7] = 0x11111111;
+
+  sum = uint256_add(left, right);
+  ASSERT (sum.data[0] == 0x22222222);
+  ASSERT (sum.data[1] == 0x1);
+  ASSERT (sum.data[2] == 0x2);
+  ASSERT (sum.data[3] == 0x22222222);
+  ASSERT (sum.data[4] == 0x22222222); 
+  ASSERT (sum.data[5] == 0x22222222);
+  ASSERT (sum.data[6] == 0x22222222);
+  ASSERT (sum.data[7] == 0x22222222);
+}
+
+void subTest(){
+  UInt256 left;
+  UInt256 right;
+}
+
+void negateTest(){
+  UInt256 left;
+  UInt256 right;
+}
+
+void bitSetTest(){
+  UInt256 left;
+  UInt256 right;
+}
+
+void getBitTest(){
+  UInt256 left;
+  UInt256 right;
+}
+
+void createFrom32Test(){
+  UInt256 left;
+  UInt256 right;
+}
+
+void createFromArrayTest(){
+  UInt256 left;
+  UInt256 right;
+}
+
 int main( int argc, char **argv ) {
   if ( argc > 1 )
     tctest_testname_to_execute = argv[1];
 
   TEST_INIT();
 
-  //TEST( test_get_bits );
-  //TEST( test_is_bit_set );
-  //TEST( test_create_from_u32 );
-  //TEST( test_create );
-  //TEST( test_create_from_hex );
-  //TEST( test_format_as_hex );
-  //TEST( test_add );
-  //TEST( test_sub );
-  //TEST( test_negate );
-  //TEST( test_neg_overflow );
+  TEST( test_get_bits );
+  TEST( test_is_bit_set );
+  TEST( test_create_from_u32 );
+  TEST( test_create );
+  TEST( test_create_from_hex );
+  TEST( test_format_as_hex );
+  TEST( test_add );
+  TEST( test_sub );
+  TEST( test_negate );
+  TEST( test_neg_overflow );
   //TEST( test_mul );
   //TEST( test_lshift );
 
-  //fromHexTest();
+  TEST (fromHexTest);
   TEST (toHexTest);
+  TEST (addTest);
+  //TEST (subTest);
 
   TEST_FINI();
 }
