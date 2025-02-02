@@ -51,7 +51,7 @@ void test_mul( TestObjs *objs );
 void test_lshift( TestObjs *objs );
 
 void isBitSetTest(){
-  UInt256 data;
+  UInt256 data = uint256_create_from_u32(0);
   data.data[0] = 0xAA; 
   data.data[1] = 0x55; 
   data.data[7] = 0x55; 
@@ -65,7 +65,14 @@ void isBitSetTest(){
   int bit5 = uint256_is_bit_set(data, (shift*32) + 5);
   int bit6 = uint256_is_bit_set(data, (shift*32) + 6);
   int bit7 = uint256_is_bit_set(data, (shift*32) + 7);
-  printf("predicted: 0b10101010. Actual: 0b%d%d%d%d%d%d%d%d\n", bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0);
+  ASSERT(0 == bit0);
+  ASSERT(1 == bit1);
+  ASSERT(0 == bit2);
+  ASSERT(1 == bit3);
+  ASSERT(0 == bit4);
+  ASSERT(1 == bit5);
+  ASSERT(0 == bit6);
+  ASSERT(1 == bit7);
 
   shift = 1;
   bit0 = uint256_is_bit_set(data, (shift*32) + 0);
@@ -76,7 +83,14 @@ void isBitSetTest(){
   bit5 = uint256_is_bit_set(data, (shift*32) + 5);
   bit6 = uint256_is_bit_set(data, (shift*32) + 6);
   bit7 = uint256_is_bit_set(data, (shift*32) + 7);
-  printf("predicted: 0b01010101. Actual: 0b%d%d%d%d%d%d%d%d\n", bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0);
+  ASSERT(1 == bit0);
+  ASSERT(0 == bit1);
+  ASSERT(1 == bit2);
+  ASSERT(0 == bit3);
+  ASSERT(1 == bit4);
+  ASSERT(0 == bit5);
+  ASSERT(1 == bit6);
+  ASSERT(0 == bit7);
 
   shift = 7;
   bit0 = uint256_is_bit_set(data, (shift*32) + 0);
@@ -87,8 +101,58 @@ void isBitSetTest(){
   bit5 = uint256_is_bit_set(data, (shift*32) + 5);
   bit6 = uint256_is_bit_set(data, (shift*32) + 6);
   bit7 = uint256_is_bit_set(data, (shift*32) + 7);
-  printf("predicted: 0b01010101. Actual: 0b%d%d%d%d%d%d%d%d\n", bit7, bit6, bit5, bit4, bit3, bit2, bit1, bit0);
+  ASSERT(1 == bit0);
+  ASSERT(0 == bit1);
+  ASSERT(1 == bit2);
+  ASSERT(0 == bit3);
+  ASSERT(1 == bit4);
+  ASSERT(0 == bit5);
+  ASSERT(1 == bit6);
+  ASSERT(0 == bit7);
+
+  shift = 3;
+  bit0 = uint256_is_bit_set(data, (shift*32) + 0);
+  bit1 = uint256_is_bit_set(data, (shift*32) + 1);
+  bit2 = uint256_is_bit_set(data, (shift*32) + 2);
+  bit3 = uint256_is_bit_set(data, (shift*32) + 3);
+  bit4 = uint256_is_bit_set(data, (shift*32) + 4);
+  bit5 = uint256_is_bit_set(data, (shift*32) + 5);
+  bit6 = uint256_is_bit_set(data, (shift*32) + 6);
+  bit7 = uint256_is_bit_set(data, (shift*32) + 7);
+  ASSERT(0 == bit0);
+  ASSERT(0 == bit1);
+  ASSERT(0 == bit2);
+  ASSERT(0 == bit3);
+  ASSERT(0 == bit4);
+  ASSERT(0 == bit5);
+  ASSERT(0 == bit6);
+  ASSERT(0 == bit7);
 }
+
+void getBitTest(){
+  UInt256 data = uint256_create_from_u32(0);
+  data.data[0] = 0xAA; 
+  data.data[1] = 0x55; 
+  data.data[7] = 0x55; 
+
+  int shift = 0;
+  int bits = uint256_get_bits(data,shift);
+  ASSERT (0xAA == bits);
+
+
+  shift = 1;
+  bits = uint256_get_bits(data,shift);
+  ASSERT (0x55 == bits);
+
+  shift = 7;
+  bits = uint256_get_bits(data,shift);
+  ASSERT (0x55 == bits);
+
+  shift = 3;
+  bits = uint256_get_bits(data,shift);
+  ASSERT (0x0 == bits);
+}
+
 
 void fromHexTest(){
   UInt256 val1 = uint256_create_from_hex("f00df00ddeadbeeffeebdaeddeadbeefdeadc0dedeadf00ddeadbeef12345678");
@@ -260,18 +324,25 @@ void subTest(){
 }
 
 void negateTest(){
-  UInt256 left;
-  UInt256 right;
-}
+  UInt256 val = uint256_negate(uint256_create_from_u32(0));
+  ASSERT(0 == val.data[0]);
+  ASSERT(0 == val.data[1]);
+  ASSERT(0 == val.data[2]);
+  ASSERT(0 == val.data[3]);
+  ASSERT(0 == val.data[4]);
+  ASSERT(0 == val.data[5]);
+  ASSERT(0 == val.data[6]);
+  ASSERT(0 == val.data[7]);
 
-void bitSetTest(){
-  UInt256 left;
-  UInt256 right;
-}
-
-void getBitTest(){
-  UInt256 left;
-  UInt256 right;
+  val.data[0] = 0xffffffff;
+  val.data[1] = 0;
+  val.data[2] = 0;
+  val.data[3] = 0;
+  val.data[4] = 0;
+  val.data[5] = 0;
+  val.data[6] = 0;
+  val.data[7] = 0;
+  val = uint256_negate(val);
 }
 
 void createFrom32Test(){
@@ -303,9 +374,12 @@ int main( int argc, char **argv ) {
   //TEST( test_mul );
   //TEST( test_lshift );
 
+  TEST (isBitSetTest);
   TEST (fromHexTest);
   TEST (toHexTest);
   TEST (addTest);
+  TEST (negateTest);
+  TEST (getBitTest);
   //TEST (subTest);
 
   TEST_FINI();
