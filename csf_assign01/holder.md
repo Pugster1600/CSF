@@ -168,3 +168,38 @@ void reverse(char * src, char * desti, int length) {
 
 note: about 2's compliment
 > 
+
+UInt256 uint256_mul( UInt256 left, UInt256 right ) {
+  UInt256 product = {0};
+  for (int i = 0; i < 256; i++) {
+    //needs to check if bit position is a 1                                                                                                                                                                                                                          
+    if (left.buckets[i / 32] & (1 << (i % 32))) {
+      //left shift by bit position in A                                                                                                                                                                                                                              
+      UInt256 term = uint256_left_shift(right, i);
+      // add result to running sum                                                                                                                                                                                                                                    
+      product = uint256_add(product, term);
+    }
+  }
+
+
+  return product;
+}
+
+UInt256 uint256_lshift( UInt256 val, unsigned shift ) {
+  assert( shift < 256 );
+  UInt256 result;
+  //we need to compute both bucket and bit shift                                                                                                                                                                                                                      
+  //moves bucket first then shifts bits inside                                                                                                                                                                                                                        
+  int bucket_shift = shift / 32;
+  int bit_shift = shift % 32;
+
+  for (int i = 7; i >= 0; i--) {
+    if (i - bucket_shift >= 0) {
+      result.buckets[i] = value.buckets[i - bucket_shift] << bit_shift; //shifts here                                                                                                                                                                                
+      if (i - bucket_shift - 1 >= 0 && bit_shift > 0) { //checks if there was overflow (aka  bit shift exists)                                                                                                                                                        
+        result.buckets[i] |= value.buckets[i - bucket_shift - 1] >> (32 - bit_shift); //bitwise OR with current bucket                                                                                                                                                
+      }
+    }
+  }
+  return result;
+}

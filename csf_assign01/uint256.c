@@ -52,7 +52,6 @@ UInt256 uint256_create_from_hex( const char *hex ) {
 
     //filling in the 8 chars
     for (int j = 0; j < charIterations; j++){
-      printf("index: %d\n", index);
       temp[(charIterations - 1) - j] = hex[index];
       index--;
     }
@@ -60,7 +59,6 @@ UInt256 uint256_create_from_hex( const char *hex ) {
     //convert the chars
     unsigned long val = strtoul(temp, NULL, 16);
     result.data[i] = val;
-    //printf("string val: %s\n", temp);
   }
 
   return result;

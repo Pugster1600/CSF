@@ -156,9 +156,6 @@ void getBitTest(){
 
 void fromHexTest(){
   UInt256 val1 = uint256_create_from_hex("f00df00ddeadbeeffeebdaeddeadbeefdeadc0dedeadf00ddeadbeef12345678");
-  //for (int i = 0; i < 8; i++){
-  //  printf("%lu\n", val1.data[i]);
-  //}
   ASSERT (val1.data[0] == 0x12345678);
   ASSERT (val1.data[1] == 0xdeadbeef);
   ASSERT (val1.data[2] == 0xdeadf00d);
@@ -169,9 +166,6 @@ void fromHexTest(){
   ASSERT (val1.data[7] == 0xf00df00d);
 
   UInt256 val2 = uint256_create_from_hex("00000000f00df00ddeadbeeffeebdaeddeadbeefdeadc0dedeadf00ddeadbeef12345678");
-  //for (int i = 0; i < 8; i++){
-  //  printf("val: %lu\n", val2.data[i]);
-  //}
   ASSERT (val2.data[0] == 0x12345678);
   ASSERT (val2.data[1] == 0xdeadbeef);
   ASSERT (val2.data[2] == 0xdeadf00d);
@@ -218,7 +212,6 @@ void toHexTest(){
   data2.data[4] = 0x1;
 
   char * val2 = uint256_format_as_hex(data2);
-  //printf("\nval: %s\n", val2);
   ASSERT(0 == strcmp("1deadc0dedeadf00ddeadbeef12345678", val2));
   free(val2);
 }
@@ -319,8 +312,19 @@ void addTest(){
 }
 
 void subTest(){
-  UInt256 left;
-  UInt256 right;
+  //assumption is that these are in 2's compliment respresentation
+  UInt256 left = uint256_create_from_u32(1);
+  UInt256 right = uint256_create_from_u32(1);
+  UInt256 val = uint256_sub(left, right);
+
+  ASSERT(val.data[0] == 0);
+  ASSERT(val.data[1] == 0);
+  ASSERT(val.data[2] == 0);
+  ASSERT(val.data[3] == 0);
+  ASSERT(val.data[4] == 0);
+  ASSERT(val.data[5] == 0);
+  ASSERT(val.data[6] == 0);
+  ASSERT(val.data[7] == 0);
 }
 
 void negateTest(){
@@ -346,13 +350,56 @@ void negateTest(){
 }
 
 void createFrom32Test(){
-  UInt256 left;
-  UInt256 right;
+  UInt256 val = uint256_create_from_u32(0xdeadbeef);
+  ASSERT (0xdeadbeef == val.data[0]);
+  ASSERT (0x0 == val.data[1]);
+  ASSERT (0x0 == val.data[2]);
+  ASSERT (0x0 == val.data[3]);
+  ASSERT (0x0 == val.data[4]);
+  ASSERT (0x0 == val.data[5]);
+  ASSERT (0x0 == val.data[6]);
+  ASSERT (0x0 == val.data[7]);
+
+  val = uint256_create_from_u32(0xffffffff);
+  ASSERT (0xffffffff == val.data[0]);
+  ASSERT (0x0 == val.data[1]);
+  ASSERT (0x0 == val.data[2]);
+  ASSERT (0x0 == val.data[3]);
+  ASSERT (0x0 == val.data[4]);
+  ASSERT (0x0 == val.data[5]);
+  ASSERT (0x0 == val.data[6]);
+  ASSERT (0x0 == val.data[7]);
+
+  val = uint256_create_from_u32(0x0);
+  ASSERT (0x0 == val.data[0]);
+  ASSERT (0x0 == val.data[1]);
+  ASSERT (0x0 == val.data[2]);
+  ASSERT (0x0 == val.data[3]);
+  ASSERT (0x0 == val.data[4]);
+  ASSERT (0x0 == val.data[5]);
+  ASSERT (0x0 == val.data[6]);
+  ASSERT (0x0 == val.data[7]);
 }
 
 void createFromArrayTest(){
-  UInt256 left;
-  UInt256 right;
+  uint32_t data[8];
+  data[0] = 0xdeadbeef;
+  data[1] = 0xffffffff;
+  data[2] = 0x0;
+  data[3] = 0xf00d;
+  data[4] = 0xdeadf00d;
+  data[5] = 0xf00df00d;
+  data[6] = 0xdeadbeef;
+  data[7] = 0x1;
+  UInt256 val = uint256_create(data);
+  ASSERT (0xdeadbeef == val.data[0]);
+  ASSERT (0xffffffff == val.data[1]);
+  ASSERT (0x0 == val.data[2]);
+  ASSERT (0xf00d == val.data[3]);
+  ASSERT (0xdeadf00d == val.data[4]);
+  ASSERT (0xf00df00d == val.data[5]);
+  ASSERT (0xdeadbeef == val.data[6]);
+  ASSERT (0x1 == val.data[7]);
 }
 
 int main( int argc, char **argv ) {
@@ -374,13 +421,15 @@ int main( int argc, char **argv ) {
   //TEST( test_mul );
   //TEST( test_lshift );
 
-  TEST (isBitSetTest);
+  TEST (createFrom32Test);
+  TEST (createFromArrayTest);
   TEST (fromHexTest);
   TEST (toHexTest);
-  TEST (addTest);
-  TEST (negateTest);
   TEST (getBitTest);
-  //TEST (subTest);
+  TEST (isBitSetTest);
+  TEST (addTest);
+  TEST (subTest);
+  TEST (negateTest);
 
   TEST_FINI();
 }
