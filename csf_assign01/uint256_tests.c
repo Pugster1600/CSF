@@ -427,7 +427,7 @@ int main( int argc, char **argv ) {
   TEST( test_sub );
   TEST( test_negate );
   TEST( test_neg_overflow );
-  //TEST( test_mul );
+  TEST( test_mul );
   TEST( test_lshift );
 
   TEST (createFrom32Test);
