@@ -338,15 +338,24 @@ void negateTest(){
   ASSERT(0 == val.data[6]);
   ASSERT(0 == val.data[7]);
 
-  val.data[0] = 0xffffffff;
-  val.data[1] = 0;
-  val.data[2] = 0;
-  val.data[3] = 0;
-  val.data[4] = 0;
-  val.data[5] = 0;
-  val.data[6] = 0;
-  val.data[7] = 0;
+  val.data[0] = 0x1;
+  val.data[1] = 0x0;
+  val.data[2] = 0x0;
+  val.data[3] = 0x0;
+  val.data[4] = 0x0;
+  val.data[5] = 0x0;
+  val.data[6] = 0x0;
+  val.data[7] = 0x0;
   val = uint256_negate(val);
+  ASSERT(0xffffffff == val.data[0]);
+  ASSERT(0xffffffff == val.data[1]);
+  ASSERT(0xffffffff == val.data[2]);
+  ASSERT(0xffffffff == val.data[3]);
+  ASSERT(0xffffffff == val.data[4]);
+  ASSERT(0xffffffff == val.data[5]);
+  ASSERT(0xffffffff == val.data[6]);
+  ASSERT(0xffffffff == val.data[7]);
+  
 }
 
 void createFrom32Test(){
@@ -419,7 +428,7 @@ int main( int argc, char **argv ) {
   TEST( test_negate );
   TEST( test_neg_overflow );
   //TEST( test_mul );
-  //TEST( test_lshift );
+  TEST( test_lshift );
 
   TEST (createFrom32Test);
   TEST (createFromArrayTest);
