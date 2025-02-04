@@ -154,6 +154,7 @@ void addTest(){
 //zip -9r solution.zip Makefile tctest.c tctest.h uint256.c uint256.h uint256_tests.c README.txt
 //scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign01/solution.zip .
 //valgrind --leak-check=full --show-leak-kinds=all ./uint256_tests
+//ruby genfact.rb
 
 
 void reverse(char * src, char * desti, int length);

@@ -309,6 +309,30 @@ void addTest(){
   ASSERT (sum.data[5] == 0x22222222);
   ASSERT (sum.data[6] == 0x22222222);
   ASSERT (sum.data[7] == 0x22222222);
+
+  right = uint256_create_from_hex("40c742e49be35bbb0f6c16ddda98da3aa39714cc57448ebba2d66ad6c0c6ffc");
+  left = uint256_create_from_hex("350aca5b5353d8d1d84e16008af60d465103192efc1fe6c1fc11a734dfb714a");
+  UInt256 predicted = uint256_create_from_hex("75d20d3fef37348ce7ba2cde658ee780f49a2dfb5364757d9ee8120ba07e146");
+  sum = uint256_add(right, left);
+  for (int i = 0; i < 8; i++){
+    ASSERT(predicted.data[i] == sum.data[i]);
+  }
+
+  right = uint256_create_from_hex("8625da298d5c4a100cfc7b4f142394edeb17675d4d1c3be473718b56bd48e9f");
+  left = uint256_create_from_hex("2750269ce0d0554bb3b77ac884ef52223d7f22a338f5dbcb46d75496db673bd");
+  predicted = uint256_create_from_hex("ad7600c66e2c9f5bc0b3f6179912e71028968a00861217afba48dfed98b025c");
+  sum = uint256_add(right, left);
+  for (int i = 0; i < 8; i++){
+    ASSERT(predicted.data[i] == sum.data[i]);
+  }
+
+  right = uint256_create_from_hex("be0627a95850a30ad5a01699c3a8aeb4188f6619efe87a0b3b962c1495eb30c");
+  left = uint256_create_from_hex("672148db875fd5f897e1c016407a8820981daf725e1ba0b082f5becab751c62");
+  predicted = uint256_create_from_hex("125277084dfb079036d81d6b0042336d4b0ad158c4e041abbbe8beadf4d3cf6e");
+  sum = uint256_add(right, left);
+  for (int i = 0; i < 8; i++){
+    ASSERT(predicted.data[i] == sum.data[i]);
+  }
 }
 
 void subTest(){
@@ -325,6 +349,39 @@ void subTest(){
   ASSERT(val.data[5] == 0);
   ASSERT(val.data[6] == 0);
   ASSERT(val.data[7] == 0);
+
+  left = uint256_create_from_hex("eb44685d42baecdc80b5bccc74d21881688941fcfe50f52e316b85875c62c3d");
+  right = uint256_create_from_hex("55e1ba7f1faf4c9c41897d3aca935be8a1ef59aa493ffeaa8865186183a066d");
+  UInt256 predicted = uint256_create_from_hex("9562adde230ba0403f2c3f91aa3ebc98c699e852b510f683a9066d25d8c25d0");
+  val = uint256_sub(left, right);
+  for (int i = 0; i < 8; i++){
+    ASSERT(val.data[i] == predicted.data[i]);
+  }
+
+  left = uint256_create_from_hex("d26c81f6fecbece79c1c90b0b9973da834afc7378db2f530adfaec47060bd8f");
+  right = uint256_create_from_hex("7b43e72ae89e44e77202ee62b7b4ec95cd0272d9fc132f467d8955f566b3d8e");
+  predicted = uint256_create_from_hex("57289acc162da8002a19a24e01e2511267ad545d919fc5ea307196519f58001");
+  val = uint256_sub(left, right);
+  for (int i = 0; i < 8; i++){
+    ASSERT(val.data[i] == predicted.data[i]);
+  }
+
+  left = uint256_create_from_hex("995ee0a652e5588eea89261a1e7f3877bc6e41f8443926ab3fb728ee3b13acd");
+  right = uint256_create_from_hex("898a495e5401c4c770e45bb0f3b2bd4e55d49287f269ecf6ee60cbc9ca8bde7");
+  predicted = uint256_create_from_hex("fd49747fee393c779a4ca692acc7b296699af7051cf39b451565d247087ce6");
+  val = uint256_sub(left, right);
+  for (int i = 0; i < 8; i++){
+    ASSERT(val.data[i] == predicted.data[i]);
+  }
+
+  //left.data[0] =;
+  //left.data[1] =;
+  //left.data[2] =;
+  //left.data[3] =;
+  //left.data[4] =;
+  //left.data[5] =;
+  //left.data[6] =;
+  //left.data[7] =;
 }
 
 void negateTest(){
