@@ -184,9 +184,9 @@ UInt256 uint256_mul( UInt256 left, UInt256 right ) {
     }
      
   }
-  for (int i = 7; i>= 0; i--) {
-    printf("product.data[%d] = %08x\n", i, product.data[i]); //Testing print
-  }
+  //for (int i = 7; i>= 0; i--) {
+  //  printf("product.data[%d] = %08x\n", i, product.data[i]); //Testing print
+  //}
 
   
   return product;
@@ -211,7 +211,7 @@ UInt256 uint256_lshift( UInt256 val, unsigned shift ) {
         result.data[i] |= val.data[i - bucket - 1] >> (32 - bitShift); //bitwise OR with current bucket to grab overflow                                                                                                                                                
       }
     }
-    printf("result.data[%d] = %08x\n", i, result.data[i]); // Debug print
+    //printf("result.data[%d] = %08x\n", i, result.data[i]); // Debug print
   }
 
 

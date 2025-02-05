@@ -629,6 +629,56 @@ void createFromArrayTest(){
   ASSERT (0x1 == val.data[7]);
 }
 
+void mulTest(){
+  UInt256 left = uint256_create_from_u32(0);
+  UInt256 right = uint256_create_from_u32(0xdeadbeef);
+  UInt256 val = uint256_mul(left, right);
+  ASSERT (0x0 == val.data[0]);
+  ASSERT (0x0 == val.data[1]);
+  ASSERT (0x0 == val.data[2]);
+  ASSERT (0x0 == val.data[3]);
+  ASSERT (0x0 == val.data[4]);
+  ASSERT (0x0 == val.data[5]);
+  ASSERT (0x0 == val.data[6]);
+  ASSERT (0x0 == val.data[7]);
+
+  left.data[0] = 0xf00dc0de;
+  left.data[1] = 0xdeaddead;
+  left.data[2] = 0xdeadf00d;
+  left.data[3] = 0xdeadbeef;
+  left.data[4] = 0xf00df00d;
+  left.data[5] = 0xf00ddead;
+  left.data[6] = 0xf00d;
+  left.data[7] = 0xc0de;
+  right = uint256_create_from_u32(1);
+  val = uint256_mul(left, right);
+  for (int i = 0; i < 8; i++){
+    ASSERT(val.data[i] == left.data[i]);
+  }
+
+
+  left = uint256_create_from_hex("b231e947a5dd34cbac5d3b78ee58569");
+  right = uint256_create_from_hex("e47f3df9ee11123ccaff5b28ebcfcda");
+  val = uint256_mul(left, right);
+  UInt256 predicted = uint256_create_from_hex("9f0d05aa671c8ddb8da6efdd7d8f8a75fd0b2953e408dcf7fa7b89d5e2f76a");
+  for (int i = 0; i < 8; i++){
+    ASSERT(val.data[i] == predicted.data[i]);
+  }
+  
+
+  left = uint256_create_from_hex("ee6d374d4590226dda68de3157defd1");
+  right = uint256_create_from_hex("e5ca9fab4a5c0a1ddbf34df64d0a916");
+  val = uint256_mul(left, right);
+  predicted = uint256_create_from_hex("d604695b1fc10c01b4fa5a58f711467daaa3d73ce30b05a43b1dc379f394f6");
+  for (int i = 0; i < 8; i++){
+    ASSERT(val.data[i] == predicted.data[i]);
+  }
+}
+
+void lShiftTest(){
+
+}
+
 int main( int argc, char **argv ) {
   if ( argc > 1 )
     tctest_testname_to_execute = argv[1];
@@ -657,6 +707,8 @@ int main( int argc, char **argv ) {
   TEST (addTest);
   TEST (subTest);
   TEST (negateTest);
+  TEST (mulTest);
+  TEST (lShiftTest);
 
   TEST_FINI();
 }
