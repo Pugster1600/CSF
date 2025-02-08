@@ -13,15 +13,6 @@
 //   input_img  - pointer to the input Image
 //   output_img - pointer to the output Image (in which the transformed
 //                pixels should be stored)
-void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
-  // TODO: implement
-  
-  for (int i = 0; i < input_img->height * input_img->width; i++) {
-    uint32_t value = input_image.data[i];
-    uint8_t y = (79*get_r(value) + 128*get_g(value) + 49*get_b(value))/256;
-    output_img.data[i] =combineData(y,y,y,get_a(value));
-  }
-}
 
 uint8_t get_r(uint32_t pixel) {
   uint8_t * val = (uint8_t *)&pixel;
@@ -47,9 +38,15 @@ uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
   return (r<<24) | (g<<16) | (b<<8) | a;
 }
 
-
- 
-
+void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
+  // TODO: implement
+  
+  for (int i = 0; i < input_img->height * input_img->width; i++) {
+    uint32_t value = input_img->data[i];
+    uint8_t y = (79*get_r(value) + 128*get_g(value) + 49*get_b(value))/256;
+    output_img->data[i] =combineData(y,y,y,get_a(value));
+  }
+}
 
 
 // Render an output image containing 4 replicas of the original image,
@@ -83,29 +80,33 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
   int width = input_img->width;
   int height = input_img->height;
-  uint32_t *new_image = malloc(4 * width * height * sizeof(uint32_t));
-  for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-        uint32_t p = input_img->data[y * width + x];
 
+  uint32_t * new_image = (uint32_t *)malloc(sizeof(uint32_t) * 4 * height * width);
+  if (new_image == NULL){
+    return;
+  }
+  
+  //uint32_t new_image[4 * width * height];
+  for (int y = 0; y < height; y++) { //y is rows
+    for (int x = 0; x < width; x++) { //x is cols
+        uint32_t p = input_img->data[(y * width) + x];
+        
         // top left
-        new_image[y * 2 * width + x] = p;
+        new_image[(y) * (2 * width) + (x)] = p; // ((current y + yshift/height) * (new width)) + (current x + xshift/width)
 
         // top right
-        new_image[y * 2 * width + (x + width)] = p;
-
+        new_image[(y) * (2 * width) + (width + x)] = combineData(get_r(p), 0, 0, get_a(p)); 
+        
         // bottom left
-        new_image[(y + height) * 2 * width + x] = p;
+        new_image[(y + height) * (2 * width) + (x)] = combineData(0, get_g(p), 0, get_a(p)); ; 
 
         // bottom right
-        new_image[(y + height) * 2 * width + (x + width)] = p;
+        new_image[(y + height) * (2 * width) + (x + width)] = combineData(0, 0, get_b(p), get_a(p)); ;
     }
   }
   output_img->height = input_img->height * 2;
   output_img->width = input_img->width * 2;
   output_img->data = new_image;
-  
-  
 }
 
 // Render a "faded" version of the input image.
