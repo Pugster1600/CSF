@@ -15,7 +15,42 @@
 //                pixels should be stored)
 void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
+  
+  for (int i = 0; i < input_img->height * input_img->width; i++) {
+    uint32_t value = input_image.data[i];
+    uint8_t y = (79*get_r(value) + 128*get_g(value) + 49*get_b(value))/256;
+    output_img.data[i] =combineData(y,y,y,get_a(value));
+  }
 }
+
+uint8_t get_r(uint32_t pixel) {
+  uint8_t * val = (uint8_t *)&pixel;
+  return *(val);
+}
+
+uint8_t get_g(uint32_t pixel) {
+  uint8_t * val = (uint8_t *)&pixel;
+  return *(val+1);
+}
+
+uint8_t get_b(uint32_t pixel) {
+  uint8_t * val = (uint8_t *)&pixel;
+  return *(val+2);
+}
+
+uint8_t get_a(uint32_t pixel) {
+  uint8_t * val = (uint8_t *)&pixel;
+  return *(val+3);
+}
+
+uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
+  return (r<<24) | (g<<16) | (b<<8) | a;
+}
+
+
+ 
+
+
 
 // Render an output image containing 4 replicas of the original image,
 // refered to as A, B, C, and D in the following diagram:
@@ -46,6 +81,31 @@ void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
 //                input image)
 void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
+  int width = input_img->width;
+  int height = input_img->height;
+  uint32_t *new_image = malloc(4 * width * height * sizeof(uint32_t));
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+        uint32_t p = input_img->data[y * width + x];
+
+        // top left
+        new_image[y * 2 * width + x] = p;
+
+        // top right
+        new_image[y * 2 * width + (x + width)] = p;
+
+        // bottom left
+        new_image[(y + height) * 2 * width + x] = p;
+
+        // bottom right
+        new_image[(y + height) * 2 * width + (x + width)] = p;
+    }
+  }
+  output_img->height = input_img->height * 2;
+  output_img->width = input_img->width * 2;
+  output_img->data = new_image;
+  
+  
 }
 
 // Render a "faded" version of the input image.
