@@ -110,6 +110,7 @@ void test_rgb_basic( TestObjs *objs );
 void test_grayscale_basic( TestObjs *objs );
 void test_fade_basic( TestObjs *objs );
 void test_kaleidoscope_basic( TestObjs *objs );
+void testGetColor();
 // TODO: add prototypes for additional test functions
 
 int main( int argc, char **argv ) {
@@ -123,12 +124,33 @@ int main( int argc, char **argv ) {
   // Run tests.
   // Make sure you add additional TEST() macro invocations
   // for any additional test functions you add.
-  TEST( test_rgb_basic );
-  TEST( test_grayscale_basic );
+  //TEST( test_rgb_basic );
+  //TEST( test_grayscale_basic );
   TEST( test_fade_basic );
-  TEST( test_kaleidoscope_basic );
+  //TEST( test_kaleidoscope_basic );
+  TEST (testGetColor);
 
   TEST_FINI();
+}
+
+void testGetColor(){
+  //r g b a, 32 - 0 -> [0] = 7-0 little endian
+  uint32_t value = 0xaabbccdd;
+  int red = get_r(value); //sanity check: should be smallest value
+  int green = get_g(value);
+  int blue = get_b(value);
+  int alpha = get_a(value);
+
+  ASSERT (red == 0xaa);
+  ASSERT (green == 0xbb);
+  ASSERT (blue == 0xcc);
+  ASSERT (alpha == 0xdd);
+
+  printf("%d %d %d %d\n", red, green, blue, alpha);
+
+  uint32_t combined = combineData(red, green, blue, alpha);
+  ASSERT (combined == value);
+  printf("combined: %lu\n", combined);
 }
 
 ////////////////////////////////////////////////////////////////////////

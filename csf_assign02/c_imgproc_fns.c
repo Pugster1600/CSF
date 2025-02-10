@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include "imgproc.h"
+#include <stdio.h>
 
 // TODO: define your helper functions here
 
@@ -14,26 +15,28 @@
 //   output_img - pointer to the output Image (in which the transformed
 //                pixels should be stored)
 
-uint8_t get_r(uint32_t pixel) {
+//little endian in memory -> lsb first [a,b,g,r] [0-7, 8-15, 15-23, 24-31]
+uint8_t get_r(uint32_t pixel) { //
   uint8_t * val = (uint8_t *)&pixel;
-  return *(val);
+  return *(val + 3);
 }
 
 uint8_t get_g(uint32_t pixel) {
   uint8_t * val = (uint8_t *)&pixel;
-  return *(val+1);
+  return *(val + 2);
 }
 
 uint8_t get_b(uint32_t pixel) {
   uint8_t * val = (uint8_t *)&pixel;
-  return *(val+2);
+  return *(val + 1);
 }
 
 uint8_t get_a(uint32_t pixel) {
   uint8_t * val = (uint8_t *)&pixel;
-  return *(val+3);
+  return *(val);
 }
 
+//value = r,g,b,a then it gets flipped in memory
 uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
   return (r<<24) | (g<<16) | (b<<8) | a;
 }
@@ -43,8 +46,13 @@ void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
   
   for (int i = 0; i < input_img->height * input_img->width; i++) {
     uint32_t value = input_img->data[i];
-    uint8_t y = (79*get_r(value) + 128*get_g(value) + 49*get_b(value))/256;
-    output_img->data[i] =combineData(y,y,y,get_a(value));
+    int y = (79*get_r(value) + 128*get_g(value) + 49*get_b(value))/256;
+    if (y > 255) {
+      y = 255;
+    } else if (y < 0) {
+      y = 0;
+    }
+    output_img->data[i] = combineData(y,y,y,get_a(value));
   }
 }
 
@@ -81,12 +89,16 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
   int width = input_img->width;
   int height = input_img->height;
 
+  //i think we have to free the previous image first becuase it is dynamically allocated
+
   uint32_t * new_image = (uint32_t *)malloc(sizeof(uint32_t) * 4 * height * width);
+  //uint32_t new_image[4 * width * height];
   if (new_image == NULL){
     return;
   }
+
+  free(output_img -> data);
   
-  //uint32_t new_image[4 * width * height];
   for (int y = 0; y < height; y++) { //y is rows
     for (int x = 0; x < width; x++) { //x is cols
         uint32_t p = input_img->data[(y * width) + x];
@@ -119,8 +131,43 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
 // Parameters:
 //   input_img - pointer to the input Image
 //   output_img - pointer to the output Image
+
+#define ONE_MILLION 1000000
+#define TWO_BILLION 2000000000
+#define ONE_TRILLION 1000000000000
+uint64_t square(uint64_t num) {
+  return num * num;
+}
+
+uint64_t getRowTransform(int rowIndex, int width){
+  return ONE_MILLION - square(((TWO_BILLION * rowIndex) / (ONE_MILLION * width)) - 1000);
+}
+
+uint64_t getColumnTransform(int colIndex, int height){
+  return ONE_MILLION - square(((TWO_BILLION * colIndex) / (ONE_MILLION * height)) - 1000);
+}
+
+uint64_t getModifiedComponentValue(int rowIndex, int colIndex, int width, int height, uint8_t color){
+  return color * getRowTransform(rowIndex, width) * getColumnTransform(colIndex, height) / ONE_TRILLION;
+}
+
+
 void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
+  int width = input_img->width;
+  int height = input_img->height;
+
+  for (int y = 0; y < height; y++) { //y is rows
+    for (int x = 0; x < width; x++) { //x is cols
+      uint32_t p = input_img->data[(y * width) + x];
+      int newRed = getModifiedComponentValue(y, x, width, height, get_r(p));
+      int newGreen = getModifiedComponentValue(y, x, width, height, get_g(p));
+      int newBlue = getModifiedComponentValue(y, x, width, height, get_b(p));
+      
+      output_img -> data[(y * width) + x] = combineData(newRed, newGreen, newBlue, get_a(p));
+      printf("%lu %lu %lu\n", newRed, newGreen, newBlue);
+    }
+  }
 }
 
 // Render a "kaleidoscope" transformation of input_img in output_img.
@@ -166,3 +213,4 @@ int imgproc_kaleidoscope( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
   return 0;
 }
+//scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign02/solution.zip .
