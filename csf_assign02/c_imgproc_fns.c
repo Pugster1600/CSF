@@ -16,28 +16,28 @@
 //                pixels should be stored)
 
 //little endian in memory -> lsb first [a,b,g,r] [0-7, 8-15, 15-23, 24-31]
-uint8_t get_r(uint32_t pixel) { //
+uint8_t get_r(int32_t pixel) { //
   uint8_t * val = (uint8_t *)&pixel;
   return *(val + 3);
 }
 
-uint8_t get_g(uint32_t pixel) {
+uint8_t get_g(int32_t pixel) {
   uint8_t * val = (uint8_t *)&pixel;
   return *(val + 2);
 }
 
-uint8_t get_b(uint32_t pixel) {
+uint8_t get_b(int32_t pixel) {
   uint8_t * val = (uint8_t *)&pixel;
   return *(val + 1);
 }
 
-uint8_t get_a(uint32_t pixel) {
+uint8_t get_a(int32_t pixel) {
   uint8_t * val = (uint8_t *)&pixel;
   return *(val);
 }
 
 //value = r,g,b,a then it gets flipped in memory
-uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
+int32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
   return (r<<24) | (g<<16) | (b<<8) | a;
 }
 
@@ -45,7 +45,7 @@ void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
   
   for (int i = 0; i < input_img->height * input_img->width; i++) {
-    uint32_t value = input_img->data[i];
+    int32_t value = input_img->data[i];
     int y = (79*get_r(value) + 128*get_g(value) + 49*get_b(value))/256;
     if (y > 255) {
       y = 255;
@@ -91,8 +91,8 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
 
   //i think we have to free the previous image first becuase it is dynamically allocated
 
-  uint32_t * new_image = (uint32_t *)malloc(sizeof(uint32_t) * 4 * height * width);
-  //uint32_t new_image[4 * width * height];
+  int32_t * new_image = (int32_t *)malloc(sizeof(int32_t) * 4 * height * width);
+  //int32_t new_image[4 * width * height];
   if (new_image == NULL){
     return;
   }
@@ -101,7 +101,7 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
   
   for (int y = 0; y < height; y++) { //y is rows
     for (int x = 0; x < width; x++) { //x is cols
-        uint32_t p = input_img->data[(y * width) + x];
+        int32_t p = input_img->data[(y * width) + x];
         
         // top left
         new_image[(y) * (2 * width) + (x)] = p; // ((current y + yshift/height) * (new width)) + (current x + xshift/width)
@@ -113,7 +113,7 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
         new_image[(y + height) * (2 * width) + (x)] = combineData(0, get_g(p), 0, get_a(p)); ; 
 
         // bottom right
-        new_image[(y + height) * (2 * width) + (x + width)] = combineData(0, 0, get_b(p), get_a(p)); ;
+        new_image[(y + height) * (2 * width) + (x + width)] = combineData(0, 0, get_b(p), get_a(p)); 
     }
   }
   output_img->height = input_img->height * 2;
@@ -163,7 +163,7 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
 
   for (int y = 0; y < height; y++) { //y is rows
     for (int x = 0; x < width; x++) { //x is cols
-      uint32_t p = input_img->data[(y * width) + x];
+      int32_t p = input_img->data[(y * width) + x];
       int newRed = getModifiedComponentValue(y, x, width, height, get_r(p));
       int newGreen = getModifiedComponentValue(y, x, width, height, get_g(p));
       int newBlue = getModifiedComponentValue(y, x, width, height, get_b(p));
@@ -213,8 +213,45 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
 // Returns:
 //   1 if successful, 0 if the transformation fails because the
 //   width and height of input_img are not the same.
+
+int getReverseIndex(int32_t width, int32_t height, int32_t currentWidth, int32_t currentHeight){
+  return width * currentHeight + height * currentWidth;
+}
+
 int imgproc_kaleidoscope( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
+  int32_t width = input_img -> width;
+  int32_t height = input_img -> height;
+
+  int32_t halfWidth = width / 2;
+  int32_t halfHeight = width / 2;
+
+  for (int32_t y = 0; y < halfHeight; y++){
+    for (int32_t x = 0; x < halfWidth; x++){
+      //the line is y=x and we want y>x
+      if (y < x){
+        continue;
+      }
+      //original A
+      int32_t p = input_img->data[(y * width) + x];
+      int32_t bTopLeftIndex = (x * width) + y; //swapping height and width
+      
+      int32_t shortWidthDistanceFromMiddle = halfWidth - x;
+      int32_t shortHeightDistanceFromMiddle = halfHeight - y;
+      int32_t longWidthDistanceFromMiddle = halfWidth - x;
+      int32_t longHeightDistanceFromMiddle = halfHeight - y;
+
+      int32_t aTopRightIndex = (y * width) + (x + (2 * shortWidthDistanceFromMiddle));
+      int32_t bTopRightIndex = 0; 
+      int32_t aBottomLeftIndex = ;
+      int32_t bBottomLeftIndex = ((x + shortHeightDistanceFromMiddle) * width) + y;
+      int32_t aBottomRightIndex = ;
+      int32_t bBottomRightIndex = ;
+      
+      
+    }
+  }
+
   return 0;
 }
 //scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign02/solution.zip .
