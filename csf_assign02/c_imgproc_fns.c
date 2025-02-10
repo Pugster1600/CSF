@@ -132,25 +132,29 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
 //   input_img - pointer to the input Image
 //   output_img - pointer to the output Image
 
-#define ONE_MILLION 1000000
-#define TWO_BILLION 2000000000
-#define ONE_TRILLION 1000000000000
-uint64_t square(uint64_t num) {
-  return num * num;
+#define ONE_MILLION 1000000L
+#define TWO_BILLION 2000000000L
+#define ONE_TRILLION 1000000000000L
+
+int64_t gradient(int64_t num){
+  num -= 1000;
+  return ONE_MILLION - (num * num);
 }
 
-uint64_t getRowTransform(int rowIndex, int width){
-  return ONE_MILLION - square(((TWO_BILLION * rowIndex) / (ONE_MILLION * width)) - 1000);
+int64_t getRowTransform(int64_t rowIndex, int64_t height){
+  int64_t num = (TWO_BILLION * rowIndex) / (ONE_MILLION * height);
+  return gradient(num);
 }
 
-uint64_t getColumnTransform(int colIndex, int height){
-  return ONE_MILLION - square(((TWO_BILLION * colIndex) / (ONE_MILLION * height)) - 1000);
+int64_t getColumnTransform(int64_t colIndex, int64_t width){
+  int64_t num = (TWO_BILLION * colIndex) / (ONE_MILLION * width);
+  return gradient(num);
 }
 
-uint64_t getModifiedComponentValue(int rowIndex, int colIndex, int width, int height, uint8_t color){
-  return color * getRowTransform(rowIndex, width) * getColumnTransform(colIndex, height) / ONE_TRILLION;
+int64_t getModifiedComponentValue(int64_t rowIndex, int64_t colIndex, int64_t width, int64_t height, int64_t  color){
+  int64_t newColor = (color * getRowTransform(rowIndex, height) * getColumnTransform(colIndex, width)) / ONE_TRILLION;
+  return newColor;
 }
-
 
 void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
@@ -165,7 +169,7 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
       int newBlue = getModifiedComponentValue(y, x, width, height, get_b(p));
       
       output_img -> data[(y * width) + x] = combineData(newRed, newGreen, newBlue, get_a(p));
-      printf("%lu %lu %lu\n", newRed, newGreen, newBlue);
+      //printf("%lu %lu %lu\n", newRed, newGreen, newBlue);
     }
   }
 }
