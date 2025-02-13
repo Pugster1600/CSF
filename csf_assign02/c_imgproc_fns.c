@@ -169,7 +169,6 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
       int newBlue = getModifiedComponentValue(y, x, width, height, get_b(p));
       
       output_img -> data[(y * width) + x] = combineData(newRed, newGreen, newBlue, get_a(p));
-      //printf("%lu %lu %lu\n", newRed, newGreen, newBlue);
     }
   }
 }
@@ -216,51 +215,67 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
 
 int imgproc_kaleidoscope( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
-  int32_t width = input_img -> width;
-  int32_t height = input_img -> height;
+  int32_t indexingWidth = input_img -> width;
+  int32_t indexingHeight = input_img -> height;
+  int32_t actualWidth = indexingWidth;
+  int32_t actualHeight = indexingHeight;
 
-  if (width != height){
+  if (actualWidth != actualHeight){
     return 0;
   }
 
-  int32_t halfWidth = width / 2;
-  int32_t halfHeight = height / 2;
+  int32_t isOdd = actualWidth % 2;
+  indexingHeight += isOdd ? 1 : 0;
+  indexingWidth += isOdd ? 1 : 0;
+  
+  int32_t divider = indexingWidth; //if index + 1 is divisible by this number then exclude ie the extended right column
+  int32_t boundary = (indexingWidth) * (indexingHeight - 1); //if index is greater than this then also no ie the extended bottom row
+
+  int32_t halfWidth = indexingWidth / 2;
+  int32_t halfHeight = indexingHeight / 2;
 
   for (int32_t y = 0; y < halfHeight; y++){ //row y
     for (int32_t x = 0; x < halfWidth; x++){ //col x
-      //the line is y=x and we want y>x
+      //the line is y=x and we want above thus y>x
       if (y > x){
         continue;
       }
 
-      int32_t aTopLeftIndex = (y * width) + x;
-      int32_t bTopLeftIndex = (x * width) + y;
+      int32_t aTopLeftIndex = (y * indexingWidth) + x;
+      int32_t bTopLeftIndex = (x * indexingHeight) + y;
 
-      uint32_t p = input_img->data[aTopLeftIndex];
-      uint32_t pixel = combineData(get_r(p), get_g(p), get_b(p), get_a(p));
+      uint32_t p = input_img->data[(y * actualWidth) + x];
       
       int32_t widthDistanceFromMiddle = halfWidth - x;
       int32_t heightDistanceFromMiddle = halfHeight - y;
       
+      //index in the imaginary grid
       int32_t aTopRightIndex = aTopLeftIndex + (2 * widthDistanceFromMiddle) - 1;
       int32_t bTopRightIndex = bTopLeftIndex + (2 * heightDistanceFromMiddle) - 1;
-      int32_t aBottomLeftIndex = aTopLeftIndex + ((2 * heightDistanceFromMiddle - 1) * width);
-      int32_t bBottomLeftIndex = bTopLeftIndex + ((2 * widthDistanceFromMiddle - 1) * width);
+      int32_t aBottomLeftIndex = aTopLeftIndex + ((2 * heightDistanceFromMiddle - 1) * indexingWidth);
+      int32_t bBottomLeftIndex = bTopLeftIndex + ((2 * widthDistanceFromMiddle - 1) * indexingWidth);
       int32_t aBottomRightIndex = aBottomLeftIndex + (2 * widthDistanceFromMiddle) - 1;
       int32_t bBottomRightIndex = bBottomLeftIndex + (2 * heightDistanceFromMiddle) - 1;
+
+      int32_t indexArray[8] = {aTopLeftIndex, bTopLeftIndex, aTopRightIndex, bTopRightIndex, aBottomLeftIndex, bBottomLeftIndex, aBottomRightIndex, bBottomRightIndex};
       
-      output_img -> data[aTopLeftIndex] = pixel;
-      output_img -> data[bTopLeftIndex] = pixel;
-      output_img -> data[aTopRightIndex] = pixel;
-      output_img -> data[bTopRightIndex] = pixel;
-      output_img -> data[aBottomLeftIndex] = pixel;
-      output_img -> data[bBottomLeftIndex] = pixel;
-      output_img -> data[aBottomRightIndex] = pixel;
-      output_img -> data[bBottomRightIndex] = pixel;
+      for (int i = 0; i < 8; i++){
+        int32_t index = indexArray[i];
 
-      printf("0: %lu\n", output_img -> data[0]);
+        if (isOdd){ 
+          if ((index >= boundary) || ((index + 1) % divider == 0)){ //if that index is out of bounds ie in the extended border
+            continue;
+          } 
+          
+          else { //if it is within bounds, need to adjust index to original image
+            int32_t row = index / indexingWidth;
+            int32_t col = index % indexingWidth;
+            index = (row * actualWidth) + col;
+          }
+        }
 
-      //printf("%d %d %d %d %d %d\n", aTopRightIndex, bTopRightIndex, aBottomLeftIndex, bBottomLeftIndex, aBottomRightIndex, bBottomRightIndex);
+        output_img -> data[index] = p;
+      }
     }
   }
 
