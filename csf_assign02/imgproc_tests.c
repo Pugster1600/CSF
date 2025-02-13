@@ -469,4 +469,3 @@ void test_kaleidoscope_basic( TestObjs *objs ) {
 
   destroy_img( sq_test_kaleidoscope_expected );
 }
-

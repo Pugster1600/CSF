@@ -41,12 +41,36 @@ uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
   return (r<<24) | (g<<16) | (b<<8) | a;
 }
 
+#define ONE_MILLION 1000000L
+#define TWO_BILLION 2000000000L
+#define ONE_TRILLION 1000000000000L
+
+int64_t gradient(int64_t num){
+  num -= 1000;
+  return ONE_MILLION - (num * num);
+}
+
+int64_t getRowTransform(int64_t rowIndex, int64_t height){
+  int64_t num = (TWO_BILLION * rowIndex) / (ONE_MILLION * height);
+  return gradient(num);
+}
+
+int64_t getColumnTransform(int64_t colIndex, int64_t width){
+  int64_t num = (TWO_BILLION * colIndex) / (ONE_MILLION * width);
+  return gradient(num);
+}
+
+int64_t getFadedComponentValue(int64_t rowIndex, int64_t colIndex, int64_t width, int64_t height, int64_t color){
+  int64_t newColor = (color * getRowTransform(rowIndex, height) * getColumnTransform(colIndex, width)) / ONE_TRILLION;
+  return newColor;
+}
+
 void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
   
   for (int i = 0; i < input_img->height * input_img->width; i++) {
     int32_t value = input_img->data[i];
-    int y = (79*get_r(value) + 128*get_g(value) + 49*get_b(value))/256;
+    int y = (79 * get_r(value) + 128 * get_g(value) + 49 * get_b(value))/256;
     if (y > 255) {
       y = 255;
     } else if (y < 0) {
@@ -132,30 +156,6 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
 //   input_img - pointer to the input Image
 //   output_img - pointer to the output Image
 
-#define ONE_MILLION 1000000L
-#define TWO_BILLION 2000000000L
-#define ONE_TRILLION 1000000000000L
-
-int64_t gradient(int64_t num){
-  num -= 1000;
-  return ONE_MILLION - (num * num);
-}
-
-int64_t getRowTransform(int64_t rowIndex, int64_t height){
-  int64_t num = (TWO_BILLION * rowIndex) / (ONE_MILLION * height);
-  return gradient(num);
-}
-
-int64_t getColumnTransform(int64_t colIndex, int64_t width){
-  int64_t num = (TWO_BILLION * colIndex) / (ONE_MILLION * width);
-  return gradient(num);
-}
-
-int64_t getModifiedComponentValue(int64_t rowIndex, int64_t colIndex, int64_t width, int64_t height, int64_t  color){
-  int64_t newColor = (color * getRowTransform(rowIndex, height) * getColumnTransform(colIndex, width)) / ONE_TRILLION;
-  return newColor;
-}
-
 void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
   int width = input_img->width;
@@ -164,9 +164,9 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
   for (int y = 0; y < height; y++) { //y is rows
     for (int x = 0; x < width; x++) { //x is cols
       int32_t p = input_img->data[(y * width) + x];
-      int newRed = getModifiedComponentValue(y, x, width, height, get_r(p));
-      int newGreen = getModifiedComponentValue(y, x, width, height, get_g(p));
-      int newBlue = getModifiedComponentValue(y, x, width, height, get_b(p));
+      int newRed = getFadedComponentValue(y, x, width, height, get_r(p));
+      int newGreen = getFadedComponentValue(y, x, width, height, get_g(p));
+      int newBlue = getFadedComponentValue(y, x, width, height, get_b(p));
       
       output_img -> data[(y * width) + x] = combineData(newRed, newGreen, newBlue, get_a(p));
     }

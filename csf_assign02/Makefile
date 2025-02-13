@@ -46,6 +46,7 @@ c_imgproc_tests : $(C_TEST_MAIN_OBJS) $(C_FN_OBJS) $(C_TEST_OBJS) $(C_COMMON_OBJ
 
 gdb: c_imgproc_tests
 	gdb ./c_imgproc_tests
+	
 valgrind: c_imgproc_tests
 	valgrind --leak-check=full --show-leak-kinds=all ./c_imgproc_tests
 
