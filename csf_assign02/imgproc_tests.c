@@ -124,14 +124,17 @@ int main( int argc, char **argv ) {
   // Run tests.
   // Make sure you add additional TEST() macro invocations
   // for any additional test functions you add.
-  //TEST( test_rgb_basic );
-  //TEST( test_grayscale_basic );
+  TEST( test_rgb_basic );
+  TEST( test_grayscale_basic );
   TEST( test_fade_basic );
-  //TEST( test_kaleidoscope_basic );
+  TEST( test_kaleidoscope_basic );
+
   TEST (testGetColor);
+  //TEST (own_test);
 
   TEST_FINI();
 }
+
 
 void testGetColor(){
   //r g b a, 32 - 0 -> [0] = 7-0 little endian

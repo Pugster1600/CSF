@@ -37,7 +37,7 @@ uint8_t get_a(int32_t pixel) {
 }
 
 //value = r,g,b,a then it gets flipped in memory
-int32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
+uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a){
   return (r<<24) | (g<<16) | (b<<8) | a;
 }
 
@@ -91,7 +91,7 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
 
   //i think we have to free the previous image first becuase it is dynamically allocated
 
-  int32_t * new_image = (int32_t *)malloc(sizeof(int32_t) * 4 * height * width);
+  uint32_t * new_image = (uint32_t *)malloc(sizeof(uint32_t) * 4 * height * width);
   //int32_t new_image[4 * width * height];
   if (new_image == NULL){
     return;
@@ -101,7 +101,7 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
   
   for (int y = 0; y < height; y++) { //y is rows
     for (int x = 0; x < width; x++) { //x is cols
-        int32_t p = input_img->data[(y * width) + x];
+        uint32_t p = input_img->data[(y * width) + x];
         
         // top left
         new_image[(y) * (2 * width) + (x)] = p; // ((current y + yshift/height) * (new width)) + (current x + xshift/width)
@@ -214,44 +214,56 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
 //   1 if successful, 0 if the transformation fails because the
 //   width and height of input_img are not the same.
 
-int getReverseIndex(int32_t width, int32_t height, int32_t currentWidth, int32_t currentHeight){
-  return width * currentHeight + height * currentWidth;
-}
-
 int imgproc_kaleidoscope( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
   int32_t width = input_img -> width;
   int32_t height = input_img -> height;
 
-  int32_t halfWidth = width / 2;
-  int32_t halfHeight = width / 2;
+  if (width != height){
+    return 0;
+  }
 
-  for (int32_t y = 0; y < halfHeight; y++){
-    for (int32_t x = 0; x < halfWidth; x++){
+  int32_t halfWidth = width / 2;
+  int32_t halfHeight = height / 2;
+
+  for (int32_t y = 0; y < halfHeight; y++){ //row y
+    for (int32_t x = 0; x < halfWidth; x++){ //col x
       //the line is y=x and we want y>x
-      if (y < x){
+      if (y > x){
         continue;
       }
-      //original A
-      int32_t p = input_img->data[(y * width) + x];
-      int32_t bTopLeftIndex = (x * width) + y; //swapping height and width
-      
-      int32_t shortWidthDistanceFromMiddle = halfWidth - x;
-      int32_t shortHeightDistanceFromMiddle = halfHeight - y;
-      int32_t longWidthDistanceFromMiddle = halfWidth - x;
-      int32_t longHeightDistanceFromMiddle = halfHeight - y;
 
-      int32_t aTopRightIndex = (y * width) + (x + (2 * shortWidthDistanceFromMiddle));
-      int32_t bTopRightIndex = 0; 
-      int32_t aBottomLeftIndex = ;
-      int32_t bBottomLeftIndex = ((x + shortHeightDistanceFromMiddle) * width) + y;
-      int32_t aBottomRightIndex = ;
-      int32_t bBottomRightIndex = ;
+      int32_t aTopLeftIndex = (y * width) + x;
+      int32_t bTopLeftIndex = (x * width) + y;
+
+      uint32_t p = input_img->data[aTopLeftIndex];
+      uint32_t pixel = combineData(get_r(p), get_g(p), get_b(p), get_a(p));
       
+      int32_t widthDistanceFromMiddle = halfWidth - x;
+      int32_t heightDistanceFromMiddle = halfHeight - y;
       
+      int32_t aTopRightIndex = aTopLeftIndex + (2 * widthDistanceFromMiddle) - 1;
+      int32_t bTopRightIndex = bTopLeftIndex + (2 * heightDistanceFromMiddle) - 1;
+      int32_t aBottomLeftIndex = aTopLeftIndex + ((2 * heightDistanceFromMiddle - 1) * width);
+      int32_t bBottomLeftIndex = bTopLeftIndex + ((2 * widthDistanceFromMiddle - 1) * width);
+      int32_t aBottomRightIndex = aBottomLeftIndex + (2 * widthDistanceFromMiddle) - 1;
+      int32_t bBottomRightIndex = bBottomLeftIndex + (2 * heightDistanceFromMiddle) - 1;
+      
+      output_img -> data[aTopLeftIndex] = pixel;
+      output_img -> data[bTopLeftIndex] = pixel;
+      output_img -> data[aTopRightIndex] = pixel;
+      output_img -> data[bTopRightIndex] = pixel;
+      output_img -> data[aBottomLeftIndex] = pixel;
+      output_img -> data[bBottomLeftIndex] = pixel;
+      output_img -> data[aBottomRightIndex] = pixel;
+      output_img -> data[bBottomRightIndex] = pixel;
+
+      printf("0: %lu\n", output_img -> data[0]);
+
+      //printf("%d %d %d %d %d %d\n", aTopRightIndex, bTopRightIndex, aBottomLeftIndex, bBottomLeftIndex, aBottomRightIndex, bBottomRightIndex);
     }
   }
 
-  return 0;
+  return 1;
 }
 //scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign02/solution.zip .

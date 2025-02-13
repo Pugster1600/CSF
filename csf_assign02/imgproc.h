@@ -102,5 +102,6 @@ uint8_t get_r(int32_t pixel);
 uint8_t get_g(int32_t pixel);
 uint8_t get_b(int32_t pixel);
 uint8_t get_a(int32_t pixel);
-int32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
+
 #endif // IMGPROC_H
