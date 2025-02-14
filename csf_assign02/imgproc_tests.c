@@ -282,7 +282,7 @@ void testGetFadedComponentValue(){
   ASSERT(middleRowMiddleColumnFadedValue == color);
 }
 
-
+//do one random one
 void testGetAdjustedIndex(){
   int32_t index = 0;
   int32_t indexingWidth = 20;
@@ -303,15 +303,77 @@ void testGetAdjustedIndex(){
   col = 5;
   index = (indexingWidth * (row - 1)) + (col - 1);
   int32_t middleIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
-  printf("middle: %d\n", middleIndex);
   ASSERT(middleIndex == 44);
 }
 
+//do one random one
 void testFillKaleidoscopeIndexArray(){
-  uint32_t indexArray[8];
-  uint32_t indexingWidth = 10;
-  uint32_t indexingHeight = 10;
+  int32_t indexArray[8];
+  int32_t width = 10; //and height
+  int32_t x = 0; //x index
+  int32_t y = 0; //y index
+
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  int32_t aTopLeftIndex = indexArray[0];
+  int32_t bTopLeftIndex = indexArray[1];
+  int32_t aTopRightIndex = indexArray[2];
+  int32_t bTopRightIndex = indexArray[3];
+  int32_t aBottomLeftIndex = indexArray[4];
+  int32_t bBottomLeftIndex = indexArray[5];
+  int32_t aBottomRightIndex = indexArray[6];
+  int32_t bBottomRightIndex = indexArray[7];
+
+  ASSERT (aTopLeftIndex == 0);
+  ASSERT (bTopLeftIndex == 0);
+  ASSERT (aTopRightIndex == 9);
+  ASSERT (bTopRightIndex == 9);
+  ASSERT (aBottomLeftIndex == 90);
+  ASSERT (bBottomLeftIndex == 90);
+  ASSERT (aBottomRightIndex == 99);
+  ASSERT (bBottomRightIndex == 99);
+
+  //right dead in the middle
+  x = 4; 
+  y = 4; 
+
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  aTopLeftIndex = indexArray[0];
+  bTopLeftIndex = indexArray[1];
+  aTopRightIndex = indexArray[2];
+  bTopRightIndex = indexArray[3];
+  aBottomLeftIndex = indexArray[4];
+  bBottomLeftIndex = indexArray[5];
+  aBottomRightIndex = indexArray[6];
+  bBottomRightIndex = indexArray[7];
+  ASSERT (aTopLeftIndex == 44);
+  ASSERT (bTopLeftIndex == 44);
+  ASSERT (aTopRightIndex == 45);
+  ASSERT (bTopRightIndex == 45);
+  ASSERT (aBottomLeftIndex == 54);
+  ASSERT (bBottomLeftIndex == 54);
+  ASSERT (aBottomRightIndex == 55);
+  ASSERT (bBottomRightIndex == 55);
   
+  //first row middle
+  x = 4; 
+  y = 0; 
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  aTopLeftIndex = indexArray[0];
+  bTopLeftIndex = indexArray[1];
+  aTopRightIndex = indexArray[2];
+  bTopRightIndex = indexArray[3];
+  aBottomLeftIndex = indexArray[4];
+  bBottomLeftIndex = indexArray[5];
+  aBottomRightIndex = indexArray[6];
+  bBottomRightIndex = indexArray[7];
+  ASSERT (aTopLeftIndex == 4);
+  ASSERT (bTopLeftIndex == 40);
+  ASSERT (aTopRightIndex == 5);
+  ASSERT (bTopRightIndex == 49);
+  ASSERT (aBottomLeftIndex == 94);
+  ASSERT (bBottomLeftIndex == 50);
+  ASSERT (aBottomRightIndex == 95);
+  ASSERT (bBottomRightIndex == 59);
 }
 
 ////////////////////////////////////////////////////////////////////////
