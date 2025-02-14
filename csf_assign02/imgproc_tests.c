@@ -111,51 +111,9 @@ void test_grayscale_basic( TestObjs *objs );
 void test_fade_basic( TestObjs *objs );
 void test_kaleidoscope_basic( TestObjs *objs );
 void testGetColor();
+void testCombineData();
 
 // TODO: add prototypes for additional test functions
-void own( TestObjs *objs ) {
-  struct Picture sq_test_kaleidoscope_expected_pic = {
-    TEST_COLORS,
-    13, // width
-    13, // height
-    "rrrrrrrrrrrrr"
-    "rggggggggggrr"
-    "rgbbbbbbbbgrr"
-    "rgbmmmmmmbgrr"
-    "rgbmccccmbgrr"
-    "rgbmcrrcmbgrr"
-    "rgbmcrrcmbgrr"
-    "rgbmccccmbgrr"
-    "rgbmmmmmmbgrr"
-    "rgbbbbbbbbgrr"
-    "rggggggggggrr"
-    "rrrrrrrrrrrrr"
-    "rrrrrrrrrrrrr"
-  };
-
-  struct Picture sq_test_pic = {
-    TEST_COLORS,
-    9, // width
-    9, // height
-    "rrrrr    "
-    " gggg    "
-    "  bbb    "
-    "   mm    "
-    "    c    "
-    "         "
-    "         "
-    "         "
-    "         "
-  };
-
-  struct Image *test = picture_to_img( &sq_test_pic);
-
-  imgproc_kaleidoscope(test, objs->sq_test_out );
-
-  destroy_img(test);
-
-}
-
 
 
 int main( int argc, char **argv ) {
@@ -175,30 +133,72 @@ int main( int argc, char **argv ) {
   TEST( test_kaleidoscope_basic );
 
   TEST (testGetColor);
-  TEST (own);
+  TEST (testCombineData);
 
   TEST_FINI();
 }
 
-
 void testGetColor(){
   //r g b a, 32 - 0 -> [0] = 7-0 little endian
   uint32_t value = 0xaabbccdd;
-  int red = get_r(value); //sanity check: should be smallest value
-  int green = get_g(value);
-  int blue = get_b(value);
-  int alpha = get_a(value);
+  uint32_t red = get_r(value); //sanity check: should be smallest value
+  uint32_t green = get_g(value);
+  uint32_t blue = get_b(value);
+  uint32_t alpha = get_a(value);
 
   ASSERT (red == 0xaa);
   ASSERT (green == 0xbb);
   ASSERT (blue == 0xcc);
   ASSERT (alpha == 0xdd);
 
-  printf("%d %d %d %d\n", red, green, blue, alpha);
+  value = 0xdeadbeef;
+  red = get_r(value);
+  green = get_g(value);
+  blue = get_b(value);
+  alpha = get_a(value);
 
+  ASSERT (red == 0xde);
+  ASSERT (green == 0xad);
+  ASSERT (blue == 0xbe);
+  ASSERT (alpha == 0xef);
+
+  value = 0x12345678;
+  red = get_r(value);
+  green = get_g(value);
+  blue = get_b(value);
+  alpha = get_a(value);
+
+  ASSERT (red == 0x12);
+  ASSERT (green == 0x34);
+  ASSERT (blue == 0x56);
+  ASSERT (alpha == 0x78);
+}
+
+void testCombineData(){
+  //r g b a, 32 - 0 -> [0] = 7-0 little endian
+  uint32_t value = 0xaabbccdd;
+  uint32_t red = get_r(value); //sanity check: should be smallest value
+  uint32_t green = get_g(value);
+  uint32_t blue = get_b(value);
+  uint32_t alpha = get_a(value);
   uint32_t combined = combineData(red, green, blue, alpha);
-  ASSERT (combined == value);
-  printf("combined: %lu\n", combined);
+  ASSERT(value == combined);
+
+  value = 0xdeadbeef;
+  red = get_r(value);
+  green = get_g(value);
+  blue = get_b(value);
+  alpha = get_a(value);
+  combined = combineData(red, green, blue, alpha);
+  ASSERT(value == combined);
+
+  value = 0x12345678;
+  red = get_r(value);
+  green = get_g(value);
+  blue = get_b(value);
+  alpha = get_a(value);
+  combined = combineData(red, green, blue, alpha);
+  ASSERT(value == combined);
 }
 
 ////////////////////////////////////////////////////////////////////////

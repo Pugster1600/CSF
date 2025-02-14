@@ -77,8 +77,8 @@ void fillKaleidoscopeIndexArray(int32_t * indexArray, int32_t indexingWidth, int
   int32_t halfHeight = indexingHeight / 2;
   int32_t widthDistanceFromMiddle = halfWidth - x;
   int32_t heightDistanceFromMiddle = halfHeight - y;
-      
-      //index in the imaginary grid
+
+  //index in the imaginary grid
   int32_t aTopLeftIndex = (y * indexingWidth) + x;
   int32_t bTopLeftIndex = (x * indexingHeight) + y;
   int32_t aTopRightIndex = aTopLeftIndex + (2 * widthDistanceFromMiddle) - 1;
