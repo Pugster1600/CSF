@@ -175,9 +175,8 @@ void testGetColor(){
 }
 
 void testCombineData(){
-  //r g b a, 32 - 0 -> [0] = 7-0 little endian
   uint32_t value = 0xaabbccdd;
-  uint32_t red = get_r(value); //sanity check: should be smallest value
+  uint32_t red = get_r(value);
   uint32_t green = get_g(value);
   uint32_t blue = get_b(value);
   uint32_t alpha = get_a(value);
