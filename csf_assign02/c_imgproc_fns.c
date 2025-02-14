@@ -65,17 +65,52 @@ int64_t getFadedComponentValue(int64_t rowIndex, int64_t colIndex, int64_t width
   return newColor;
 }
 
+int32_t getAdjustedIndex(int32_t index, int32_t indexingWidth, int32_t actualWidth){
+  int32_t row = index / indexingWidth;
+  int32_t col = index % indexingWidth;
+  int32_t updatedIndex = (row * actualWidth) + col;
+  return updatedIndex;
+}
+
+void fillKaleidoscopeIndexArray(int32_t * indexArray, int32_t indexingWidth, int32_t indexingHeight, int32_t x, int32_t y){
+  int32_t halfWidth =  indexingWidth / 2;
+  int32_t halfHeight = indexingHeight / 2;
+  int32_t widthDistanceFromMiddle = halfWidth - x;
+  int32_t heightDistanceFromMiddle = halfHeight - y;
+      
+      //index in the imaginary grid
+  int32_t aTopLeftIndex = (y * indexingWidth) + x;
+  int32_t bTopLeftIndex = (x * indexingHeight) + y;
+  int32_t aTopRightIndex = aTopLeftIndex + (2 * widthDistanceFromMiddle) - 1;
+  int32_t bTopRightIndex = bTopLeftIndex + (2 * heightDistanceFromMiddle) - 1;
+  int32_t aBottomLeftIndex = aTopLeftIndex + ((2 * heightDistanceFromMiddle - 1) * indexingWidth);
+  int32_t bBottomLeftIndex = bTopLeftIndex + ((2 * widthDistanceFromMiddle - 1) * indexingWidth);
+  int32_t aBottomRightIndex = aBottomLeftIndex + (2 * widthDistanceFromMiddle) - 1;
+  int32_t bBottomRightIndex = bBottomLeftIndex + (2 * heightDistanceFromMiddle) - 1;
+
+  indexArray[0] = aTopLeftIndex;
+  indexArray[1] = bTopLeftIndex;
+  indexArray[2] = aTopRightIndex;
+  indexArray[3] = bTopRightIndex;
+  indexArray[4] = aBottomLeftIndex;
+  indexArray[5] = bBottomLeftIndex;
+  indexArray[6] = aBottomRightIndex;
+  indexArray[7] = bBottomRightIndex;
+}
+
 void imgproc_grayscale( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
   
   for (int i = 0; i < input_img->height * input_img->width; i++) {
     int32_t value = input_img->data[i];
     int y = (79 * get_r(value) + 128 * get_g(value) + 49 * get_b(value))/256;
-    if (y > 255) {
+
+    if (y > 255) { //clamping
       y = 255;
     } else if (y < 0) {
       y = 0;
     }
+
     output_img->data[i] = combineData(y,y,y,get_a(value));
   }
 }
@@ -115,34 +150,30 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
 
   //i think we have to free the previous image first becuase it is dynamically allocated
 
-  uint32_t * new_image = (uint32_t *)malloc(sizeof(uint32_t) * 4 * height * width);
-  //int32_t new_image[4 * width * height];
-  if (new_image == NULL){
-    return;
-  }
+  //uint32_t * new_image = (uint32_t *)malloc(sizeof(uint32_t) * 4 * height * width); //int32_t new_image[4 * width * height];
 
-  free(output_img -> data);
+  //free(output_img -> data);
   
   for (int y = 0; y < height; y++) { //y is rows
     for (int x = 0; x < width; x++) { //x is cols
         uint32_t p = input_img->data[(y * width) + x];
         
         // top left
-        new_image[(y) * (2 * width) + (x)] = p; // ((current y + yshift/height) * (new width)) + (current x + xshift/width)
+        output_img -> data[(y) * (2 * width) + (x)] = p; // ((current y + yshift/height) * (new width)) + (current x + xshift/width)
 
         // top right
-        new_image[(y) * (2 * width) + (width + x)] = combineData(get_r(p), 0, 0, get_a(p)); 
+        output_img -> data[(y) * (2 * width) + (width + x)] = combineData(get_r(p), 0, 0, get_a(p)); 
         
         // bottom left
-        new_image[(y + height) * (2 * width) + (x)] = combineData(0, get_g(p), 0, get_a(p)); ; 
+        output_img -> data[(y + height) * (2 * width) + (x)] = combineData(0, get_g(p), 0, get_a(p)); ; 
 
         // bottom right
-        new_image[(y + height) * (2 * width) + (x + width)] = combineData(0, 0, get_b(p), get_a(p)); 
+        output_img -> data[(y + height) * (2 * width) + (x + width)] = combineData(0, 0, get_b(p), get_a(p)); 
     }
   }
-  output_img->height = input_img->height * 2;
-  output_img->width = input_img->width * 2;
-  output_img->data = new_image;
+  //output_img->height = input_img->height * 2;
+  //output_img->width = input_img->width * 2;
+  //output_img->data = new_image;
 }
 
 // Render a "faded" version of the input image.
@@ -215,70 +246,45 @@ void imgproc_fade( struct Image *input_img, struct Image *output_img ) {
 
 int imgproc_kaleidoscope( struct Image *input_img, struct Image *output_img ) {
   // TODO: implement
-  int32_t indexingWidth = input_img -> width;
-  int32_t indexingHeight = input_img -> height;
-  int32_t actualWidth = indexingWidth;
-  int32_t actualHeight = indexingHeight;
-
-  if (actualWidth != actualHeight){
+  if (input_img -> width != input_img -> height){
     return 0;
   }
 
+  int32_t actualWidth = input_img -> width;
+  int32_t actualHeight = input_img -> height;
   int32_t isOdd = actualWidth % 2;
-  indexingHeight += isOdd ? 1 : 0;
-  indexingWidth += isOdd ? 1 : 0;
+  int32_t indexingWidth = actualWidth + isOdd;
+  int32_t indexingHeight = actualHeight + isOdd;
   
-  int32_t divider = indexingWidth; //if index + 1 is divisible by this number then exclude ie the extended right column
-  int32_t boundary = (indexingWidth) * (indexingHeight - 1); //if index is greater than this then also no ie the extended bottom row
+  //if index + 1 is divisible by this number then exclude ie the extended right column
+  //if index is greater than this then also no ie the extended bottom row
+  int32_t extraRowStartIndex = (indexingWidth) * (indexingHeight - 1);
 
-  int32_t halfWidth = indexingWidth / 2;
-  int32_t halfHeight = indexingHeight / 2;
-
-  for (int32_t y = 0; y < halfHeight; y++){ //row y
-    for (int32_t x = 0; x < halfWidth; x++){ //col x
-      //the line is y=x and we want above thus y>x
-      if (y > x){
+  for (int32_t y = 0; y < (indexingWidth/2) ; y++){ //row y
+    for (int32_t x = 0; x < indexingHeight/2; x++){ //col x
+      if (y > x){ //the line is y=x and we want above thus y>x
         continue;
       }
-
-      int32_t aTopLeftIndex = (y * indexingWidth) + x;
-      int32_t bTopLeftIndex = (x * indexingHeight) + y;
-
+      
       uint32_t p = input_img->data[(y * actualWidth) + x];
-      
-      int32_t widthDistanceFromMiddle = halfWidth - x;
-      int32_t heightDistanceFromMiddle = halfHeight - y;
-      
-      //index in the imaginary grid
-      int32_t aTopRightIndex = aTopLeftIndex + (2 * widthDistanceFromMiddle) - 1;
-      int32_t bTopRightIndex = bTopLeftIndex + (2 * heightDistanceFromMiddle) - 1;
-      int32_t aBottomLeftIndex = aTopLeftIndex + ((2 * heightDistanceFromMiddle - 1) * indexingWidth);
-      int32_t bBottomLeftIndex = bTopLeftIndex + ((2 * widthDistanceFromMiddle - 1) * indexingWidth);
-      int32_t aBottomRightIndex = aBottomLeftIndex + (2 * widthDistanceFromMiddle) - 1;
-      int32_t bBottomRightIndex = bBottomLeftIndex + (2 * heightDistanceFromMiddle) - 1;
-
-      int32_t indexArray[8] = {aTopLeftIndex, bTopLeftIndex, aTopRightIndex, bTopRightIndex, aBottomLeftIndex, bBottomLeftIndex, aBottomRightIndex, bBottomRightIndex};
+      int32_t indexArray[8];
+      fillKaleidoscopeIndexArray(indexArray, indexingWidth, indexingHeight, x, y);
       
       for (int i = 0; i < 8; i++){
         int32_t index = indexArray[i];
 
         if (isOdd){ 
-          if ((index >= boundary) || ((index + 1) % divider == 0)){ //if that index is out of bounds ie in the extended border
+          if ((index >= extraRowStartIndex) || ((index + 1) % indexingWidth == 0)){ //if that index is out of bounds ie in the extended border
             continue;
           } 
-          
+
           else { //if it is within bounds, need to adjust index to original image
-            int32_t row = index / indexingWidth;
-            int32_t col = index % indexingWidth;
-            index = (row * actualWidth) + col;
+            index = getAdjustedIndex(index, indexingWidth, actualWidth);
           }
         }
-
         output_img -> data[index] = p;
       }
     }
   }
-
   return 1;
 }
-//scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign02/solution.zip .
