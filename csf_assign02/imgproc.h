@@ -108,13 +108,12 @@ uint32_t combineData(uint8_t r, uint8_t g, uint8_t b, uint8_t a);
 
 //functions for fade
 int64_t gradient(int64_t num);
-int64_t getRowTransform(int64_t rowIndex, int64_t height);
-int64_t getColumnTransform(int64_t rowIndex, int64_t width);
+int64_t getMappedPixel(int64_t index, int64_t totalSize);
 int64_t getFadedComponentValue(int64_t rowIndex, int64_t colIndex, int64_t width, int64_t height, int64_t color);
 
 //function to get adjusted index
 int32_t getAdjustedIndex(int32_t index, int32_t indexingWidth, int32_t actualWidth);
 
-void fillKaleidoscopeIndexArray(int32_t * indexArray, int32_t indexingWidth, int32_t indexingHeight, int32_t x, int32_t y);
+void fillKaleidoscopeIndexArray(int32_t * indexArray, int32_t indexingDimension, int32_t x, int32_t y);
 
 #endif // IMGPROC_H

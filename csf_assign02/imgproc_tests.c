@@ -110,8 +110,15 @@ void test_rgb_basic( TestObjs *objs );
 void test_grayscale_basic( TestObjs *objs );
 void test_fade_basic( TestObjs *objs );
 void test_kaleidoscope_basic( TestObjs *objs );
+
 void testGetColor();
 void testCombineData();
+
+void testGetMappedPixel();
+void testGradient();
+void testGetFadedComponentValue();
+void testGetAdjustedIndex();
+void testFillKaleidoscopeIndexArray();
 
 // TODO: add prototypes for additional test functions
 
@@ -134,6 +141,11 @@ int main( int argc, char **argv ) {
 
   TEST (testGetColor);
   TEST (testCombineData);
+  TEST (testGetMappedPixel);
+  TEST (testGradient);
+  TEST (testGetFadedComponentValue);
+  TEST (testGetAdjustedIndex);
+  TEST (testFillKaleidoscopeIndexArray);
 
   TEST_FINI();
 }
@@ -198,6 +210,108 @@ void testCombineData(){
   alpha = get_a(value);
   combined = combineData(red, green, blue, alpha);
   ASSERT(value == combined);
+}
+
+//do one random
+void testGetMappedPixel(){
+  int64_t rowIndex = 0;
+  int64_t totalSize = 100;
+  int64_t firstPixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(firstPixel == 0); //if its the first one then no fade
+
+  rowIndex = totalSize;
+  int64_t finalPixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(finalPixel == 2000); //if its final transform then 2k (0-2k)
+
+  rowIndex = totalSize / 2;
+  int64_t middlePixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(middlePixel == 1000); //2000 * ratio
+}
+
+//do one random
+void testGradient(){
+  int64_t rowIndex = 0;
+  int64_t totalSize = 100;
+  int64_t firstPixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(firstPixel == 0); //if its the first one then no fade
+  int64_t firstGradient = gradient(firstPixel);
+  ASSERT (firstGradient == 0); //first grad = 0
+
+  rowIndex = totalSize;
+  int64_t finalPixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(finalPixel == 2000); //if its final transform then 2k (0-2k)
+  int64_t finalGradient = gradient(finalPixel);
+  ASSERT(finalGradient == 0); //final grad = 0
+
+  rowIndex = totalSize / 2;
+  int64_t middlePixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(middlePixel == 1000); //1000 at the middle
+  int64_t middleGradient = gradient(middlePixel);
+  ASSERT(middleGradient == 1000000); //max value at the middle
+}
+
+//do one random
+void testGetFadedComponentValue(){
+  int64_t rowIndex = 0;
+  int64_t colIndex = 0;
+  int64_t width = 100;
+  int64_t height = 100;
+  int64_t color = 255;
+
+  //anything first or end = 0
+  int64_t firstRowFirstColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(firstRowFirstColumnFadedValue == 0);
+
+  rowIndex = height / 2;
+  colIndex = width;
+  int64_t middleRowFinalColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(middleRowFinalColumnFadedValue == 0);
+
+  rowIndex = height;
+  colIndex = width / 2;
+  int64_t finalRowMiddleColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(finalRowMiddleColumnFadedValue == 0);
+
+  colIndex = width;
+  int64_t finalRowFinalColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(finalRowFinalColumnFadedValue == 0);
+
+  colIndex = width/2;
+  rowIndex = height/2;
+  int64_t middleRowMiddleColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(middleRowMiddleColumnFadedValue == color);
+}
+
+
+void testGetAdjustedIndex(){
+  int32_t index = 0;
+  int32_t indexingWidth = 20;
+  int32_t actualWidth = 10;
+
+  int32_t firstIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  ASSERT(firstIndex == 0);
+
+  //row 10, col 10 aka the final index in a 10x10 grid
+  int row = 10;
+  int col = 10;
+  index = (indexingWidth * (row - 1)) + (col - 1);
+  int32_t finalIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  ASSERT(finalIndex == 99);
+
+  ////row 5, col 5 aka the middle of the grid
+  row = 5;
+  col = 5;
+  index = (indexingWidth * (row - 1)) + (col - 1);
+  int32_t middleIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  printf("middle: %d\n", middleIndex);
+  ASSERT(middleIndex == 44);
+}
+
+void testFillKaleidoscopeIndexArray(){
+  uint32_t indexArray[8];
+  uint32_t indexingWidth = 10;
+  uint32_t indexingHeight = 10;
+  
 }
 
 ////////////////////////////////////////////////////////////////////////

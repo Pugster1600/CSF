@@ -50,18 +50,15 @@ int64_t gradient(int64_t num){
   return ONE_MILLION - (num * num);
 }
 
-int64_t getRowTransform(int64_t rowIndex, int64_t height){
-  int64_t num = (TWO_BILLION * rowIndex) / (ONE_MILLION * height);
-  return gradient(num);
-}
-
-int64_t getColumnTransform(int64_t colIndex, int64_t width){
-  int64_t num = (TWO_BILLION * colIndex) / (ONE_MILLION * width);
-  return gradient(num);
+//rowIndex + height or colIndex + width
+int64_t getMappedPixel(int64_t index, int64_t totalSize){
+  return (TWO_BILLION * index) / (ONE_MILLION * totalSize);
 }
 
 int64_t getFadedComponentValue(int64_t rowIndex, int64_t colIndex, int64_t width, int64_t height, int64_t color){
-  int64_t newColor = (color * getRowTransform(rowIndex, height) * getColumnTransform(colIndex, width)) / ONE_TRILLION;
+  int64_t mappedRow = getMappedPixel(rowIndex, height);
+  int64_t mappedCol = getMappedPixel(colIndex, width);
+  int64_t newColor = (color * gradient(mappedRow) * gradient(mappedCol)) / ONE_TRILLION;
   return newColor;
 }
 
@@ -72,19 +69,19 @@ int32_t getAdjustedIndex(int32_t index, int32_t indexingWidth, int32_t actualWid
   return updatedIndex;
 }
 
-void fillKaleidoscopeIndexArray(int32_t * indexArray, int32_t indexingWidth, int32_t indexingHeight, int32_t x, int32_t y){
-  int32_t halfWidth =  indexingWidth / 2;
-  int32_t halfHeight = indexingHeight / 2;
+void fillKaleidoscopeIndexArray(int32_t * indexArray, int32_t indexingDimension, int32_t x, int32_t y){
+  int32_t halfWidth =  indexingDimension / 2;
+  int32_t halfHeight = indexingDimension / 2;
   int32_t widthDistanceFromMiddle = halfWidth - x;
   int32_t heightDistanceFromMiddle = halfHeight - y;
 
   //index in the imaginary grid
-  int32_t aTopLeftIndex = (y * indexingWidth) + x;
-  int32_t bTopLeftIndex = (x * indexingHeight) + y;
+  int32_t aTopLeftIndex = (y * indexingDimension) + x;
+  int32_t bTopLeftIndex = (x * indexingDimension) + y;
   int32_t aTopRightIndex = aTopLeftIndex + (2 * widthDistanceFromMiddle) - 1;
   int32_t bTopRightIndex = bTopLeftIndex + (2 * heightDistanceFromMiddle) - 1;
-  int32_t aBottomLeftIndex = aTopLeftIndex + ((2 * heightDistanceFromMiddle - 1) * indexingWidth);
-  int32_t bBottomLeftIndex = bTopLeftIndex + ((2 * widthDistanceFromMiddle - 1) * indexingWidth);
+  int32_t aBottomLeftIndex = aTopLeftIndex + ((2 * heightDistanceFromMiddle - 1) * indexingDimension);
+  int32_t bBottomLeftIndex = bTopLeftIndex + ((2 * widthDistanceFromMiddle - 1) * indexingDimension);
   int32_t aBottomRightIndex = aBottomLeftIndex + (2 * widthDistanceFromMiddle) - 1;
   int32_t bBottomRightIndex = bBottomLeftIndex + (2 * heightDistanceFromMiddle) - 1;
 
@@ -260,15 +257,15 @@ int imgproc_kaleidoscope( struct Image *input_img, struct Image *output_img ) {
   //if index is greater than this then also no ie the extended bottom row
   int32_t extraRowStartIndex = (indexingWidth) * (indexingHeight - 1);
 
-  for (int32_t y = 0; y < (indexingWidth/2) ; y++){ //row y
-    for (int32_t x = 0; x < indexingHeight/2; x++){ //col x
+  for (int32_t y = 0; y < (indexingWidth / 2) ; y++){ //row y
+    for (int32_t x = 0; x < indexingHeight / 2; x++){ //col x
       if (y > x){ //the line is y=x and we want above thus y>x
         continue;
       }
       
       uint32_t p = input_img->data[(y * actualWidth) + x];
       int32_t indexArray[8];
-      fillKaleidoscopeIndexArray(indexArray, indexingWidth, indexingHeight, x, y);
+      fillKaleidoscopeIndexArray(indexArray, indexingWidth, x, y);
       
       for (int i = 0; i < 8; i++){
         int32_t index = indexArray[i];
