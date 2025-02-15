@@ -251,6 +251,8 @@ getFadedComponentValue:
 	ret
 
 /**
+ * gets the index from a new grid based on the same x and y position 
+ *
  * Parameters
  * %edi (rdi) -> int32_t index
  * %esi (rsi) -> int32_t indexingWidth
@@ -283,115 +285,127 @@ getAdjustedIndex:
 
 
 /**
+ * Fills in the array that holds reflected and mirroed indicies in kaleidoscope
+ * Parameters:
  * %rdi - int32_t * pointer to indexArray (address thus 64 bits)
  * %esi - int32_t indexingDimension (width and height)
  * %edx - int32_t current x
  * %ecx - int32_t current y
+ *
+ * Stack memory:
+ * %r11 -> used to stored the index
+ * %r12 -> used to store halfIndex (halfHeight and halfWidth)
+ * %r13 -> used to store widthDistanceFromMiddle
+ * %r14 -> used to store heightDistanceFromMiddle
+ * %r15 -> used to store index calculations
+ * %rdx -> x value (clobbered by division)
  */
 	.globl fillKaleidoscopeIndexArray
 fillKaleidoscopeIndexArray:
+	/*save callee reigsters*/
 	push %r11
 	push %r12
 	push %r13
 	push %r14
 	push %r15
 
-	push %rdx                          /*clobbered by division*/
+	push %rdx                            /*clobbered by division*/
 	
 	/*calculate half index*/
 	
-	movq $0, %rdx												/*need this else arithmetic exception b/c its 127:0 rdx:rax for division*/
-	movl %esi, %eax                     /*indexingDimension into eax*/
-	movl $2, %r11d
+	movq $0, %rdx												 /*need this else arithmetic exception b/c its 127:0 rdx:rax for division*/
+	movl %esi, %eax                      /*indexingDimension into eax*/
+	movl $2, %r11d											 /*put diving factor into r11*/
 	divl %r11d                           /*indexingDimension / 2*/
-	movl %eax, %r12d                    /*halfIndex = indexingDimension / 2*/
-	pop %rdx
+	movl %eax, %r12d                     /*r12 -> halfIndex = indexingDimension / 2*/
+	pop %rdx														 /*restore rdx that was clobbered*/
 
 	/*widthDistanceFromMiddle*/
-	movl %r12d, %r13d
-	subl %edx, %r13d
+	movl %r12d, %r13d										 
+	subl %edx, %r13d										 /*r13 = widthDistanceFromMiddle*/
 
 	/*heightDistanceFromMiddle*/
 	movl %r12d, %r14d
-	subl %ecx, %r14d
+	subl %ecx, %r14d										 /*r14 = heightDistanceFromMiddle*/
 
 	/*aTopLeftIndex*/
-	movl %esi, %r15d                    /*indexing dimenion to r13*/
-	imull %ecx, %r15d                   /* y * indexingDimension */
+	movl %esi, %r15d                     /*indexing dimenion to r13*/
+	imull %ecx, %r15d                    /* y * indexingDimension */
 	addl %edx, %r15d										 /* y * indexingDimension + x*/
 	movq $0, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array (the address is 64bits BUT the value we are moving is 32bits)*/
+	movl %r15d, (%rdi, %r11, 4)          /* save to array index`0 (the address is 64bits BUT the value we are moving is 32bits)*/
 
 
 	/*bTopLeftIndex*/
 	movl %esi, %r15d                    /*indexing dimenion to r13*/
 	imull %edx, %r15d                   /* x * indexingDimension */
-	addl %ecx, %r15d										 /* x * indexingDimension + y*/
+	addl %ecx, %r15d										/* x * indexingDimension + y*/
 	movq $1, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+	movl %r15d, (%rdi, %r11, 4)         /* save to array index 1 (movl 32bit data, (64bit address, 64bit index, sizeof(data)))*/
 
 	/*aTopRightIndex*/
-	movl %r13d, %r15d
-	imull $2, %r15d
-	subl $1, %r15d
-	movq $0, %r11
-	movl (%rdi, %r11, 4), %eax						 /*aTopLeftIndex*/
-	addl %eax, %r15d
+	movl %r13d, %r15d									  /*widthDistanceFromMiddle*/
+	imull $2, %r15d											/*widthDistanceFromMiddle * 2*/
+	subl $1, %r15d											/*(widthDistanceFromMiddle * 2) - 1*/
+	movq $0, %r11												
+	movl (%rdi, %r11, 4), %eax					/*move aTopLeftIndex to eax*/
+	addl %eax, %r15d										/*aTopLeftIndex + (widthDistanceFromMiddle * 2) - 1*/
 	movq $2, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+	movl %r15d, (%rdi, %r11, 4)         /*save to index 2*/
 
 	/*bTopRightIndex*/
-	movl %r14d, %r15d
-	imull $2, %r15d
-	subl $1, %r15d
-	movq $1, %r11
-	movl (%rdi, %r11, 4), %eax						 /*bTopLeftIndex*/
-	addl %eax, %r15d
+	movl %r14d, %r15d										/*heightDistanceFromMiddle*/
+	imull $2, %r15d											/*heightDistanceFromMiddle * 2*/
+	subl $1, %r15d											/*heightDistanceFromMiddle * 2 - 1*/
+	movq $1, %r11												
+	movl (%rdi, %r11, 4), %eax					/*move bTopLeftIndex to eax*/
+	addl %eax, %r15d										/*bTopLeftIndex + (heightDistanceFromMiddle * 2) - 1*/
 	movq $3, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+	movl %r15d, (%rdi, %r11, 4)         /* save to index 3*/
 
 	/*aBottomLeftIndex*/
-	movl %r14d, %r15d
-	imull $2, %r15d
-	subl $1, %r15d
-	imull %esi, %r15d
+	movl %r14d, %r15d										/*heightDistanceFromMiddle*/
+	imull $2, %r15d											/*heightDistanceFromMiddle * 2*/
+	subl $1, %r15d											/*heightDistanceFromMiddle * 2 - 1*/
+	imull %esi, %r15d										/*((heightDistanceFromMiddle * 2) - 1) * indexingDimension*/
 	movq $0, %r11
-	movl (%rdi, %r11, 4), %eax						 /*aTopLeftIndex*/
-	addl %eax, %r15d
+	movl (%rdi, %r11, 4), %eax					/*move aTopLeftIndex to eax*/
+	addl %eax, %r15d										/*aTopLeftIndex + ((heightDistanceFromMiddle * 2) - 1) * indexingDimension*/
 	movq $4, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+	movl %r15d, (%rdi, %r11, 4)         /* save to index 4*/
 
 	/*bBottomLeftIndex*/
-	movl %r13d, %r15d
-	imull $2, %r15d
-	subl $1, %r15d
-	imull %esi, %r15d
+	movl %r13d, %r15d									  /*widthDistanceFromMiddle*/
+	imull $2, %r15d											/*widthDistanceFromMiddle * 2*/
+	subl $1, %r15d											/*widthDistanceFromMiddle * 2 - 1*/
+	imull %esi, %r15d										/*((widthDistanceFromMiddle * 2) - 1) * indexingDimension*/
 	movq $1, %r11
-	movl (%rdi, %r11, 4), %eax						 /*bTopLeftIndex*/
-	addl %eax, %r15d
+	movl (%rdi, %r11, 4), %eax					/*move bTopLeftIndex to eax*/
+	addl %eax, %r15d										/*bTopLeftIndex + ((widthDistanceFromMiddle * 2) - 1) * indexingDimension*/
 	movq $5, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+	movl %r15d, (%rdi, %r11, 4)         /* save to index 5*/
 
 	/*aBottomRightIndex*/
-	movl %r13d, %r15d
-	imull $2, %r15d
-	subl $1, %r15d
+	movl %r13d, %r15d									  /*widthDistanceFromMiddle*/
+	imull $2, %r15d											/*widthDistanceFromMiddle * 2*/
+	subl $1, %r15d											/*widthDistanceFromMiddle * 2 - 1*/
 	movq $4, %r11
-	movl (%rdi, %r11, 4), %eax						 /*aTopLeftIndex*/
-	addl %eax, %r15d
+	movl (%rdi, %r11, 4), %eax					/*move aBottomLeftIndex to eax*/
+	addl %eax, %r15d										/*aBottomLeftIndex + ((widthDistanceFromMiddle * 2) - 1)*/
 	movq $6, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+	movl %r15d, (%rdi, %r11, 4)         /* save to index 6*/
 
 	/*bBottomRightIndex*/
-	movl %r14d, %r15d
-	imull $2, %r15d
-	subl $1, %r15d
+	movl %r14d, %r15d										/*heightDistanceFromMiddle*/
+	imull $2, %r15d											/*heightDistanceFromMiddle * 2*/
+	subl $1, %r15d											/*heightDistanceFromMiddle * 2 - 1*/
 	movq $5, %r11
-	movl (%rdi, %r11, 4), %eax						 /*bTopLeftIndex*/
-	addl %eax, %r15d
+	movl (%rdi, %r11, 4), %eax					/*move bBottomLeftIndex to eax*/
+	addl %eax, %r15d										/*bBottomLeftIndex + ((heightDistanceFromMiddle * 2) - 1)*/
 	movq $7, %r11
-	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+	movl %r15d, (%rdi, %r11, 4)         /* save to index 7*/
 
+	/*restore callee register states*/
 	pop %r15
 	pop %r14
 	pop %r13
