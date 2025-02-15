@@ -212,7 +212,6 @@ void testCombineData(){
   ASSERT(value == combined);
 }
 
-//do one random
 void testGetMappedPixel(){
   int64_t rowIndex = 0;
   int64_t totalSize = 100;
@@ -226,9 +225,12 @@ void testGetMappedPixel(){
   rowIndex = totalSize / 2;
   int64_t middlePixel = getMappedPixel(rowIndex, totalSize);
   ASSERT(middlePixel == 1000); //2000 * ratio
+
+  rowIndex = totalSize / 4;
+  int64_t testPixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(testPixel = 500); //0.25 * 2000
 }
 
-//do one random
 void testGradient(){
   int64_t rowIndex = 0;
   int64_t totalSize = 100;
@@ -248,9 +250,14 @@ void testGradient(){
   ASSERT(middlePixel == 1000); //1000 at the middle
   int64_t middleGradient = gradient(middlePixel);
   ASSERT(middleGradient == 1000000); //max value at the middle
+
+  rowIndex = totalSize / 4;
+  int64_t testPixel = getMappedPixel(rowIndex, totalSize);
+  ASSERT(testPixel == 500); 
+  int64_t testPixelGradient = gradient(testPixel);
+  ASSERT(testPixelGradient == (1000000 - 250000));
 }
 
-//do one random
 void testGetFadedComponentValue(){
   int64_t rowIndex = 0;
   int64_t colIndex = 0;
@@ -280,9 +287,12 @@ void testGetFadedComponentValue(){
   rowIndex = height/2;
   int64_t middleRowMiddleColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
   ASSERT(middleRowMiddleColumnFadedValue == color);
-}
 
-//do one random one
+  colIndex = width/2;
+  rowIndex = height / 4;
+  int64_t testFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(testFadedValue == (uint64_t)(color * 0.75)); //750k / 1mil
+}
 void testGetAdjustedIndex(){
   int32_t index = 0;
   int32_t indexingWidth = 20;
@@ -298,12 +308,18 @@ void testGetAdjustedIndex(){
   int32_t finalIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
   ASSERT(finalIndex == 99);
 
-  ////row 5, col 5 aka the middle of the grid
+  //row 5, col 5 aka the middle of the grid
   row = 5;
   col = 5;
   index = (indexingWidth * (row - 1)) + (col - 1);
   int32_t middleIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
   ASSERT(middleIndex == 44);
+
+  row = 3; 
+  col = 4;
+  index = (indexingWidth * (row - 1)) + (col - 1);
+  int32_t testIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  ASSERT(testIndex == 23); //row 3, col 4 of a 10x10 grid
 }
 
 //do one random one
@@ -374,6 +390,26 @@ void testFillKaleidoscopeIndexArray(){
   ASSERT (bBottomLeftIndex == 50);
   ASSERT (aBottomRightIndex == 95);
   ASSERT (bBottomRightIndex == 59);
+
+  x = 3;
+  y = 2; 
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  aTopLeftIndex = indexArray[0];
+  bTopLeftIndex = indexArray[1];
+  aTopRightIndex = indexArray[2];
+  bTopRightIndex = indexArray[3];
+  aBottomLeftIndex = indexArray[4];
+  bBottomLeftIndex = indexArray[5];
+  aBottomRightIndex = indexArray[6];
+  bBottomRightIndex = indexArray[7];
+  ASSERT (aTopLeftIndex == 23);
+  ASSERT (bTopLeftIndex == 32);
+  ASSERT (aTopRightIndex == 26);
+  ASSERT (bTopRightIndex == 37);
+  ASSERT (aBottomLeftIndex == 73);
+  ASSERT (bBottomLeftIndex == 62);
+  ASSERT (aBottomRightIndex == 76);
+  ASSERT (bBottomRightIndex == 67);
 }
 
 ////////////////////////////////////////////////////////////////////////
