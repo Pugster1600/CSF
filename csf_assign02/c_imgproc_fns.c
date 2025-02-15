@@ -146,10 +146,6 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
   int height = input_img->height;
 
   //i think we have to free the previous image first becuase it is dynamically allocated
-
-  //uint32_t * new_image = (uint32_t *)malloc(sizeof(uint32_t) * 4 * height * width); //int32_t new_image[4 * width * height];
-
-  //free(output_img -> data);
   
   for (int y = 0; y < height; y++) { //y is rows
     for (int x = 0; x < width; x++) { //x is cols
@@ -168,9 +164,6 @@ void imgproc_rgb( struct Image *input_img, struct Image *output_img ) {
         output_img -> data[(y + height) * (2 * width) + (x + width)] = combineData(0, 0, get_b(p), get_a(p)); 
     }
   }
-  //output_img->height = input_img->height * 2;
-  //output_img->width = input_img->width * 2;
-  //output_img->data = new_image;
 }
 
 // Render a "faded" version of the input image.
