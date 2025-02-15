@@ -16,86 +16,388 @@
  */
 
 /*
- * %edi (from %rdi) holds the uint32_t pixel value
- * return the value to %rax's %al because its a byte
+ * Used to get the 8-bit red value from pixel
+ * Register used: 
+ * %edi - uint32_t pixel
+ *
+ * Stack memroy:
+ * none
+ *
+ * returns the red value to %al
  */
  .globl get_r
 get_r:
-	shr $24, %edi //shifts eax right 24 -> r is now in al
-	movb %dil, %al 
+	shr $24, %edi               /*get bits 31-24 in little endian format*/
+	movb %dil, %al              /*move the 8-bit value to 8-bit return reg*/
 	ret
 
 /*
- * %edi (from %rdi) holds the uint32_t pixel value
- * return the value to %rax's %al because its a byte
+ * Used to get the 8-bit green value from pixel
+ * Register used: 
+ * %edi - uint32_t pixel
+ *
+ * Stack memroy:
+ * none
+ *
+ * returns the green value to %al
  */
  .globl get_g
 get_g:
-	shr $16, %edi; //shift eax by 16 -> g is now in al
-	movb %dil, %al
+	shr $16, %edi;             /*get bits 23-16 in %dil*/
+	movb %dil, %al             /*move the 8-bit value to 8-bit return reg*/
 	ret
 
 /*
- * %edi (from %rdi) holds the uint32_t pixel value
- * return the value to %rax's %al because its a byte
+ * Used to get the 8-bit blue value from pixel
+ * Register used: 
+ * %edi - uint32_t pixel
+ *
+ * Stack memroy:
+ * none
+ *
+ * returns the blue value to %al
  */
  .globl get_b
 get_b:
-	shr $8, %edi //shift eax right by 8 -> b is now in al
-	movb %dil, %al
+	shr $8, %edi               /*get bits 15-8 in %dil*/
+	movb %dil, %al             /*move the 8-bit value to 8-bit return reg*/
 	ret
 
 /*
- * %edi (from %rdi) holds the uint32_t pixel value
- * return the value to %rax's %al because its a byte
+ * Used to get the 8-bit alpha value from pixel
+ * Register used: 
+ * %edi - uint32_t pixel
+ *
+ * Stack memroy:
+ * none
+ *
+ * returns the alpha value to %al
  */
  .globl get_a
 get_a:
-	movb %dil, %al
+	movb %dil, %al         /*move the 8-bit value to 8-bit return reg*/
 	ret
 
-/**
- * r passed into %dil -> %rdi
- * g passed into %sil -> %rsi
- * b passed into %dl-> %rdx
- * a passed into %cl -> %rcx
+/*
+ * Used to get the combined 32-bit pixel value consistening of rgba
+ * Register used: 
+ * %dil (%rdi) - uint8_t red
+ * %sil (%rsi) - uint8_t green
+ * %dl (%rdx) - uint8_t blue
+ * %cl (%rcx) - uint8_t alpha
+ *
+ * Stack memroy:
+ * none
+ *
+ * returns the uint32_t combined value in to %eax
  */
 	.global combineData
 combineData:
-	shl $24, %edi //shift red << 24 -> little endian
-	shl $16, %esi //shift green << 16
-	shl $8, %edx //shift blue << 8
+	shl $24, %edi          /*move red to bits 31-24 b/c little endian*/
+	shl $16, %esi          /*move green to bits 23-16*/
+	shl $8, %edx           /*move green to bits 15-8*/
 
-	or %esi, %edi //or green and red, storing in edi
-	or %edx, %edi //or blue and edi, storing in edi
-	or %ecx, %edi //or alpha and edi, storing in edi
-	movl %edi, %eax //move edi to return
+	or %esi, %edi          /*or with red*/
+	or %edx, %edi 
+	or %ecx, %edi
+	movl %edi, %eax        /*move the final red into eax*/
 	ret
 
-/**
- * rdi -> index
- * rsi -> totalSize
+/*
+ * Used to get the pixel value mapping from 0-2000
+ * Register used: 
+ * %rdi - int64_t index
+ * %rsi - int64_t totalSize
+ *
+ * Stack memroy:
+ * none
+ *
+ * returns the pixel value mapping in %rax
  */
 	.globl getMappedPixel
 getMappedPixel:
-	imulq $2000000000, %rdi 
-	imulq $1000000, %rsi
+	imulq $2000000000, %rdi  /*index * 2 billion -> numerator*/
+	imulq $1000000, %rsi     /*totalSize * 1 million -> denominator*/
 
-	movq $0, %rdx //64 bit dividend
-	movq %rdi, %rax 
-	divq %rsi // rax / rsi -> stored in rax
+	movq $0, %rdx            /*get 64 bit result*/
+	movq %rdi, %rax          /*move numerator to return reg*/
+	divq %rsi                /*rax / rsi*/
+
+	ret
+
+/*
+ * Used to get the gradient of an input number between 0-2000
+ * Register used: 
+ * %rdi - int64_t num
+ * %rsi - int64_t totalSize
+ *
+ * Stack memroy:
+ * none
+ *
+ * returns the gradient in %rax
+ */
+	.globl gradient
+gradient:
+	subq $1000, %rdi             /*num - 1000*/
+	imulq %rdi, %rdi             /*(num - 1000) ** 2*/
+	movq $1000000, %rax          /*move 1mil into rax*/
+	subq %rdi, %rax              /*1million - (num - 1000) ** 2*/
+	ret
+
+/**
+ * Returns the faded component value based on the index, amount in row/col and color value
+ * 
+ * Parameters: 
+ * %rdi - int64_t rowIndex
+ * %rsi - int64_t colIndex
+ * %rdx - int64_t width
+ * %rcx - int64_t height
+ * %r8 - int8_t color
+ *
+ * Stack memory:
+ * -8(%rbp) - %r12
+ * -16(%rbp) - %r13 
+ * -24(%rbp) - %r14
+ * -32(%rbp) - %r15
+ * -40(%rbp) - %rdi - rowIndex
+ * -48(%rbp) - %rsi - colIndex
+ * -56(%rbp) - %rdx - width
+ * -64(%rbp) - %rcx - height
+ * -72(%rbp) - %r8 - color
+ */
+	.globl getFadedComponentValue
+getFadedComponentValue:
+	push %r12                      /*Saving callee registers*/
+	push %r13
+	push %r14
+	push %r15
+
+	/*calling getMapped Pixel*/
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %r8
+	movq %rdi, %rdi                 /*moving rowIndex for arg1*/
+	movq %rcx, %rsi                 /*moving height for arg2*/
+	call getMappedPixel
+	movq %rax, %r12                 /*r12 - mappedRow var*/
+	pop %r8 
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi 
+	
+	/*calling getMapped Pixel for col*/
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %r8
+	movq %rsi, %rdi                 /*moving colIndex for arg1*/
+	movq %rdx, %rsi                 /*moving width for arg2*/
+	call getMappedPixel
+	movq %rax, %r13                 /*r13 - mappedCol reg*/
+	pop %r8 
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi 
+
+	/*calling gradient for r12 - mappedRow*/
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %r8
+	movq %r12, %rdi                 /*moving mappedRow into arg1*/
+	call gradient
+	movq %rax, %r12                 /*moving ret to r12*/
+	pop %r8 
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi 
+
+	/*calling gradient for r13 - mappedCol*/
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %r8
+	movq %r13, %rdi                /*moving mappedCol into arg1*/
+	call gradient
+	movq %rax, %r13                /*moving ret to r13*/
+	pop %r8 
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi 
+	
+	imulq %r8, %r12                /*color * gradient(mappedRow)*/
+	imulq %r12, %r13               /*color * gradient(mappedRow) * gradient(mappedCol)*/
+	movq %r13, %rax                /*move result to return */
+
+	movq $0, %rdx                  /*64 bit dividend*/
+	movq $1000000000000, %rsi      /*one trillion to %rsi*/
+	divq %rsi                      /*color * gradient(mappedRow) * gradient(mappedCol) / trillion*/
+
+	/*popping callee registers*/ 
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
 
 	ret
 
 /**
- * rdi -> stores num
+ * Parameters
+ * %edi (rdi) -> int32_t index
+ * %esi (rsi) -> int32_t indexingWidth
+ * %edx (rdx) -> int32_t actualWidth
+ *
+ * Stack memory:
+ * %r12 
+ * %rdx -> int32_t actualWidth (clobbered by division)
  */
-	.globl gradient
-gradient:
-	subq $1000, %rdi
-	imulq %rdi, %rdi
-	movq $1000000, %rax
-	subq %rdi, %rax
+	.globl getAdjustedIndex
+getAdjustedIndex:
+	push %r12              /*save callee*/
+	push %rdx              /*edx gets clobbered by dividing*/
+	
+	movq $0, %rdx          /*64 bit value*/
+	movl %edi, %eax        /*index into eax ie dividend*/
+	divl %esi              /*eax = index / indexingWidth -> row*/
+
+	movl %eax, %r12d       /*r12d = index % indexingWidth -> col*/
+	movl %edx, %eax        /*eax = actualWidth*/
+
+	pop %rdx               /*restore clobbered register*/
+	
+	imull %edx, %r12d      /*actualWidth * row*/
+	addl %r12d, %eax       /*actualWidth * row + col*/
+
+	pop %r12
+
+	ret 
+
+
+/**
+ * %rdi - int32_t * pointer to indexArray (address thus 64 bits)
+ * %esi - int32_t indexingDimension (width and height)
+ * %edx - int32_t current x
+ * %ecx - int32_t current y
+ */
+	.globl fillKaleidoscopeIndexArray
+fillKaleidoscopeIndexArray:
+	push %r11
+	push %r12
+	push %r13
+	push %r14
+	push %r15
+
+	push %rdx                          /*clobbered by division*/
+	
+	/*calculate half index*/
+	
+	movq $0, %rdx												/*need this else arithmetic exception b/c its 127:0 rdx:rax for division*/
+	movl %esi, %eax                     /*indexingDimension into eax*/
+	movl $2, %r11d
+	divl %r11d                           /*indexingDimension / 2*/
+	movl %eax, %r12d                    /*halfIndex = indexingDimension / 2*/
+	pop %rdx
+
+	/*widthDistanceFromMiddle*/
+	movl %r12d, %r13d
+	subl %edx, %r13d
+
+	/*heightDistanceFromMiddle*/
+	movl %r12d, %r14d
+	subl %ecx, %r14d
+
+	/*aTopLeftIndex*/
+	movl %esi, %r15d                    /*indexing dimenion to r13*/
+	imull %ecx, %r15d                   /* y * indexingDimension */
+	addl %edx, %r15d										 /* y * indexingDimension + x*/
+	movq $0, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array (the address is 64bits BUT the value we are moving is 32bits)*/
+
+
+	/*bTopLeftIndex*/
+	movl %esi, %r15d                    /*indexing dimenion to r13*/
+	imull %edx, %r15d                   /* x * indexingDimension */
+	addl %ecx, %r15d										 /* x * indexingDimension + y*/
+	movq $1, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+
+	/*aTopRightIndex*/
+	movl %r13d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movq $0, %r11
+	movl (%rdi, %r11, 4), %eax						 /*aTopLeftIndex*/
+	addl %eax, %r15d
+	movq $2, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+
+	/*bTopRightIndex*/
+	movl %r14d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movq $1, %r11
+	movl (%rdi, %r11, 4), %eax						 /*bTopLeftIndex*/
+	addl %eax, %r15d
+	movq $3, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+
+	/*aBottomLeftIndex*/
+	movl %r14d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	imull %esi, %r15d
+	movq $0, %r11
+	movl (%rdi, %r11, 4), %eax						 /*aTopLeftIndex*/
+	addl %eax, %r15d
+	movq $4, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+
+	/*bBottomLeftIndex*/
+	movl %r13d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	imull %esi, %r15d
+	movq $1, %r11
+	movl (%rdi, %r11, 4), %eax						 /*bTopLeftIndex*/
+	addl %eax, %r15d
+	movq $5, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+
+	/*aBottomRightIndex*/
+	movl %r13d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movq $4, %r11
+	movl (%rdi, %r11, 4), %eax						 /*aTopLeftIndex*/
+	addl %eax, %r15d
+	movq $6, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+
+	/*bBottomRightIndex*/
+	movl %r14d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movq $5, %r11
+	movl (%rdi, %r11, 4), %eax						 /*bTopLeftIndex*/
+	addl %eax, %r15d
+	movq $7, %r11
+	movl %r15d, (%rdi, %r11, 4)            /* save to array */
+
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %r11
+	
 	ret
 
 /*

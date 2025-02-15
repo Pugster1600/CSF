@@ -680,3 +680,88 @@ void test_kaleidoscope_basic( TestObjs *objs ) {
 
   destroy_img( sq_test_kaleidoscope_expected );
 }
+
+	/*widthDistanceFromMiddle*/
+	movl %r12d, %r13d
+	subl %edx, %r13d
+
+	/*heightDistanceFromMiddle*/
+	movl %r12d, %r14d
+	subl %ecx, %r14d
+
+	/*aTopLeftIndex*/
+	movl %esi, %r15d                    /*indexing dimenion to r13*/
+	imull %ecx, %r15d                   /* y * indexingDimension */
+	addl %edx, %r15d										 /* y * indexingDimension + x*/
+	movl $0, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */
+
+
+	/*bTopLeftIndex*/
+	movl %esi, %r15d                    /*indexing dimenion to r13*/
+	imull %ecx, %r15d                   /* x * indexingDimension */
+	addl %edx, %r15d										 /* x * indexingDimension + y*/
+	movl $1, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */
+
+	/*aTopRightIndex*/
+	movl %r13d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movl $0, %r11d
+	movl (%edi, %r11d, 4), %eax						 /*aTopLeftIndex*/
+	addl %eax, %r15d
+	movl $2, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */
+
+	/*bTopRightIndex*/
+	movl %r14d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movl $1, %r11d
+	movl (%edi, %r11d, 4), %eax						 /*bTopLeftIndex*/
+	addl %eax, %r15d
+	movl $3, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */
+
+	/*aBottomLeftIndex*/
+	movl %r14d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	imull %esi, %r15d
+	movl $0, %r11d
+	movl (%edi, %r11d, 4), %eax						 /*aTopLeftIndex*/
+	addl %eax, %r15d
+	movl $4, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */
+
+	/*bBottomLeftIndex*/
+	movl %r13d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	imull %esi, %r15d
+	movl $1, %r11d
+	movl (%edi, %r11d, 4), %eax						 /*bTopLeftIndex*/
+	addl %eax, %r15d
+	movl $5, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */
+
+	/*aBottomRightIndex*/
+	movl %r13d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movl $4, %r11d
+	movl (%edi, %r11d, 4), %eax						 /*aTopLeftIndex*/
+	addl %eax, %r15d
+	movl $6, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */
+
+	/*bBottomRightIndex*/
+	movl %r14d, %r15d
+	imull $2, %r15d
+	subl $1, %r15d
+	movl $5, %r11d
+	movl (%edi, %r11d, 4), %eax						 /*bTopLeftIndex*/
+	addl %eax, %r15d
+	movl $7, %r11d
+	movl %r15d, (%edi, %r11d, 4)            /* save to array */

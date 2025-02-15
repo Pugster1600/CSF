@@ -115,6 +115,9 @@ void testGetColor();
 void testCombineData();
 void testGetMappedPixel();
 void testGradient();
+void testGetFadedComponentValue();
+void testGetAdjustedIndex();
+void testFillKaleidoscopeIndexArray();
 
 // TODO: add prototypes for additional test functions
 
@@ -139,6 +142,10 @@ int main( int argc, char **argv ) {
   TEST (testCombineData);
   TEST (testGetMappedPixel);
   TEST (testGradient);
+  TEST (testGetFadedComponentValue);
+  TEST (testGetAdjustedIndex);
+
+  TEST (testFillKaleidoscopeIndexArray);
 
   TEST_FINI();
 }
@@ -251,6 +258,159 @@ void testGradient(){
   ASSERT(testPixelGradient == (1000000 - 250000));
 }
 
+void testGetFadedComponentValue(){
+  int64_t rowIndex = 0;
+  int64_t colIndex = 0;
+  int64_t width = 100;
+  int64_t height = 100;
+  int64_t color = 255;
+
+  //anything first or end = 0
+  int64_t firstRowFirstColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(firstRowFirstColumnFadedValue == 0);
+
+  rowIndex = height / 2;
+  colIndex = width;
+  int64_t middleRowFinalColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(middleRowFinalColumnFadedValue == 0);
+
+  rowIndex = height;
+  colIndex = width / 2;
+  int64_t finalRowMiddleColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(finalRowMiddleColumnFadedValue == 0);
+
+  colIndex = width;
+  int64_t finalRowFinalColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(finalRowFinalColumnFadedValue == 0);
+
+  colIndex = width/2;
+  rowIndex = height/2;
+  int64_t middleRowMiddleColumnFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(middleRowMiddleColumnFadedValue == color);
+
+  colIndex = width / 2;
+  rowIndex = height / 4;
+  int64_t testFadedValue = getFadedComponentValue(rowIndex, colIndex, width, height, color);
+  ASSERT(testFadedValue == (uint64_t)(color * 0.75)); //750k / 1mil
+}
+
+void testGetAdjustedIndex(){
+  int32_t index = 0;
+  int32_t indexingWidth = 20;
+  int32_t actualWidth = 10;
+
+  int32_t firstIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  ASSERT(firstIndex == 0);
+
+  //row 10, col 10 aka the final index in a 10x10 grid
+  int row = 10;
+  int col = 10;
+  index = (indexingWidth * (row - 1)) + (col - 1);
+  int32_t finalIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  ASSERT(finalIndex == 99);
+
+  //row 5, col 5 aka the middle of the grid
+  row = 5;
+  col = 5;
+  index = (indexingWidth * (row - 1)) + (col - 1);
+  int32_t middleIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  ASSERT(middleIndex == 44);
+
+  row = 3; 
+  col = 4;
+  index = (indexingWidth * (row - 1)) + (col - 1);
+  int32_t testIndex = getAdjustedIndex(index, indexingWidth, actualWidth);
+  ASSERT(testIndex == 23); //row 3, col 4 of a 10x10 grid
+}
+
+void testFillKaleidoscopeIndexArray(){
+  int32_t indexArray[8];
+  int32_t width = 10; //and height
+  int32_t x = 0; //x index
+  int32_t y = 0; //y index
+
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  int32_t aTopLeftIndex = indexArray[0];
+  int32_t bTopLeftIndex = indexArray[1];
+  int32_t aTopRightIndex = indexArray[2];
+  int32_t bTopRightIndex = indexArray[3];
+  int32_t aBottomLeftIndex = indexArray[4];
+  int32_t bBottomLeftIndex = indexArray[5];
+  int32_t aBottomRightIndex = indexArray[6];
+  int32_t bBottomRightIndex = indexArray[7];
+
+  ASSERT (aTopLeftIndex == 0);
+  ASSERT (bTopLeftIndex == 0);
+  ASSERT (aTopRightIndex == 9);
+  ASSERT (bTopRightIndex == 9);
+  ASSERT (aBottomLeftIndex == 90);
+  ASSERT (bBottomLeftIndex == 90);
+  ASSERT (aBottomRightIndex == 99);
+  ASSERT (bBottomRightIndex == 99);
+
+  //right dead in the middle
+  x = 4; 
+  y = 4; 
+
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  aTopLeftIndex = indexArray[0];
+  bTopLeftIndex = indexArray[1];
+  aTopRightIndex = indexArray[2];
+  bTopRightIndex = indexArray[3];
+  aBottomLeftIndex = indexArray[4];
+  bBottomLeftIndex = indexArray[5];
+  aBottomRightIndex = indexArray[6];
+  bBottomRightIndex = indexArray[7];
+  ASSERT (aTopLeftIndex == 44);
+  ASSERT (bTopLeftIndex == 44);
+  ASSERT (aTopRightIndex == 45);
+  ASSERT (bTopRightIndex == 45);
+  ASSERT (aBottomLeftIndex == 54);
+  ASSERT (bBottomLeftIndex == 54);
+  ASSERT (aBottomRightIndex == 55);
+  ASSERT (bBottomRightIndex == 55);
+  
+  //first row middle
+  x = 4; 
+  y = 0; 
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  aTopLeftIndex = indexArray[0];
+  bTopLeftIndex = indexArray[1];
+  aTopRightIndex = indexArray[2];
+  bTopRightIndex = indexArray[3];
+  aBottomLeftIndex = indexArray[4];
+  bBottomLeftIndex = indexArray[5];
+  aBottomRightIndex = indexArray[6];
+  bBottomRightIndex = indexArray[7];
+  ASSERT (aTopLeftIndex == 4);
+  ASSERT (bTopLeftIndex == 40);
+  ASSERT (aTopRightIndex == 5);
+  ASSERT (bTopRightIndex == 49);
+  ASSERT (aBottomLeftIndex == 94);
+  ASSERT (bBottomLeftIndex == 50);
+  ASSERT (aBottomRightIndex == 95);
+  ASSERT (bBottomRightIndex == 59);
+
+  x = 3;
+  y = 2; 
+  fillKaleidoscopeIndexArray(indexArray, width, x, y);
+  aTopLeftIndex = indexArray[0];
+  bTopLeftIndex = indexArray[1];
+  aTopRightIndex = indexArray[2];
+  bTopRightIndex = indexArray[3];
+  aBottomLeftIndex = indexArray[4];
+  bBottomLeftIndex = indexArray[5];
+  aBottomRightIndex = indexArray[6];
+  bBottomRightIndex = indexArray[7];
+  ASSERT (aTopLeftIndex == 23);
+  ASSERT (bTopLeftIndex == 32);
+  ASSERT (aTopRightIndex == 26);
+  ASSERT (bTopRightIndex == 37);
+  ASSERT (aBottomLeftIndex == 73);
+  ASSERT (bBottomLeftIndex == 62);
+  ASSERT (aBottomRightIndex == 76);
+  ASSERT (bBottomRightIndex == 67);
+}
 ////////////////////////////////////////////////////////////////////////
 // Test fixture setup/cleanup functions
 ////////////////////////////////////////////////////////////////////////
