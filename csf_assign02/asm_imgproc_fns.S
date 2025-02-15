@@ -16,6 +16,89 @@
  */
 
 /*
+ * %edi (from %rdi) holds the uint32_t pixel value
+ * return the value to %rax's %al because its a byte
+ */
+ .globl get_r
+get_r:
+	shr $24, %edi //shifts eax right 24 -> r is now in al
+	movb %dil, %al 
+	ret
+
+/*
+ * %edi (from %rdi) holds the uint32_t pixel value
+ * return the value to %rax's %al because its a byte
+ */
+ .globl get_g
+get_g:
+	shr $16, %edi; //shift eax by 16 -> g is now in al
+	movb %dil, %al
+	ret
+
+/*
+ * %edi (from %rdi) holds the uint32_t pixel value
+ * return the value to %rax's %al because its a byte
+ */
+ .globl get_b
+get_b:
+	shr $8, %edi //shift eax right by 8 -> b is now in al
+	movb %dil, %al
+	ret
+
+/*
+ * %edi (from %rdi) holds the uint32_t pixel value
+ * return the value to %rax's %al because its a byte
+ */
+ .globl get_a
+get_a:
+	movb %dil, %al
+	ret
+
+/**
+ * r passed into %dil -> %rdi
+ * g passed into %sil -> %rsi
+ * b passed into %dl-> %rdx
+ * a passed into %cl -> %rcx
+ */
+	.global combineData
+combineData:
+	shl $24, %edi //shift red << 24 -> little endian
+	shl $16, %esi //shift green << 16
+	shl $8, %edx //shift blue << 8
+
+	or %esi, %edi //or green and red, storing in edi
+	or %edx, %edi //or blue and edi, storing in edi
+	or %ecx, %edi //or alpha and edi, storing in edi
+	movl %edi, %eax //move edi to return
+	ret
+
+/**
+ * rdi -> index
+ * rsi -> totalSize
+ */
+	.globl getMappedPixel
+getMappedPixel:
+	imulq $2000000000, %rdi 
+	imulq $1000000, %rsi
+
+	movq $0, %rdx //64 bit dividend
+	movq %rdi, %rax 
+	divq %rsi // rax / rsi -> stored in rax
+
+	ret
+
+/**
+ * rdi -> stores num
+ */
+	.globl gradient
+gradient:
+	subq $1000, %rdi
+	imulq %rdi, %rdi
+	movq $1000000, %rax
+	subq %rdi, %rax
+	ret
+
+/*
  * Implementations of API functions
  */
 
