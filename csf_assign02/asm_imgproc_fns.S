@@ -251,7 +251,7 @@ getFadedComponentValue:
 	ret
 
 /**
- * gets the index from a new grid based on the same x and y position 
+ * Returns the index from a new grid based on the same x and y position 
  *
  * Parameters
  * %edi (rdi) -> int32_t index
@@ -447,9 +447,99 @@ fillKaleidoscopeIndexArray:
  *          width and height twice the width/height of the
  *          input image)
  */
+
+
 	.globl imgproc_rgb
 imgproc_rgb:
 	/* TODO: implement */
+	push %r10
+	push %r11
+	push %r12
+	push %r13
+	push %r14
+	push %r15
+
+	/*height*/
+	movq $1, %r10
+	movl (%rdi, %r10, 4), %r14d				/*height in r14*/
+
+	/*width*/
+	movq $0, %r10
+	movl (%rdi, %r10, 4), %r15d       /*width in r15*/
+
+	movl $0, %r12d										/*(height) y index in r12*/
+	movl $0, %r13d										/*(width) x index in r13*/
+
+	movl $0, %r10d										/*used to check num of iterations*/
+
+	jmp .LouterLoopCheck
+
+.LupdatePixel:
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	push %rax
+
+	addl $1, %r10d									/*check num of iterations*/
+	movl %r12d, %r11d									/*move y to r11 to get pixel*/
+	imull %r15d, %r11d							/* width * y */
+	addl %r13d, %r11d								/*x + width * y*/
+	movl 8(%rdi, %r11, 4), %r8d			/*8 from the first 2 fields move pixel value to r8*/
+
+	/*top left*/
+	movl %r12d, %r11d						 /* r11 used to hold index in output*/
+	imull $2, %r11d								/*2 * y*/
+	imull %r15d, %r11d						/*2 * y * width*/
+	addl %r13d, %r11d							/*2 * y * width + x*/
+	movl %r8d, 8(%rsi, %r11, 4)	/*move top left*/
+
+	/*top right*/
+	push %r8				/*save pixel*/
+	movl %r8d, %edi
+	call get_r			
+	push 
+
+
+	/*bottom left*/
+
+	/*bottom right*/
+
+
+	movl %r8d, %edi						/*move pixel to arg1*/
+
+
+	pop %rax
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+
+	jmp .LinnerLoopIncrement 		/*After one iteration check col (x)*/
+
+.LouterLoopIncrement:
+	addl $1, %r12d			    /*Outer: increment y aka row*/
+.LouterLoopCheck:
+	cmp %r14d, %r12d				/*compare height to y index*/
+	jge .LexitLoop					/*jump if r14 <= r12 (height <= y)*/
+	movl $0, %r13d					/*else reset x*/
+	jmp .LinnerLoopCheck		/*Jump to inner loop*/
+
+.LinnerLoopIncrement:
+	addl $1, %r13d					/*Inner: increment x aka col*/
+.LinnerLoopCheck:
+	cmp %r15d, %r13d				/*compare x to width*/
+	jge	.LouterLoopIncrement		/*jump if r15 <= r13 (width <= x)*/
+	jmp .LupdatePixel				/*else jump to updatePixel*/
+	
+.LexitLoop:
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %r11
+	pop %r10
+	
 	ret
 
 /*
