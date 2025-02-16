@@ -27,6 +27,7 @@
  */
  .globl get_r
 get_r:
+	xor %rax, %rax 						 /*clear the entire thing*/
 	shr $24, %edi               /*get bits 31-24 in little endian format*/
 	movb %dil, %al              /*move the 8-bit value to 8-bit return reg*/
 	ret
@@ -43,6 +44,7 @@ get_r:
  */
  .globl get_g
 get_g:
+	xor %rax, %rax 						 /*clear the entire thing*/
 	shr $16, %edi;             /*get bits 23-16 in %dil*/
 	movb %dil, %al             /*move the 8-bit value to 8-bit return reg*/
 	ret
@@ -59,6 +61,7 @@ get_g:
  */
  .globl get_b
 get_b:
+	xor %rax, %rax 						 /*clear the entire thing*/
 	shr $8, %edi               /*get bits 15-8 in %dil*/
 	movb %dil, %al             /*move the 8-bit value to 8-bit return reg*/
 	ret
@@ -68,13 +71,14 @@ get_b:
  * Register used: 
  * %edi - uint32_t pixel
  *
- * Stack memroy:
+ * Stack memory:
  * none
  *
  * returns the alpha value to %al
  */
  .globl get_a
 get_a:
+	xor %rax, %rax 						 /*clear the entire thing*/
 	movb %dil, %al         /*move the 8-bit value to 8-bit return reg*/
 	ret
 
@@ -472,30 +476,30 @@ imgproc_rgb:
 
 	movl $0, %r10d										/*used to check num of iterations*/
 
-	jmp .LouterLoopCheck
+	jmp .LrgbOuterLoopCheck
 
-.LupdatePixel:
+.LrgbUpdatePixel:
 
 	addl $1, %r10d									/*check num of iterations*/
 
-	jmp .LinnerLoopIncrement 		/*After one iteration check col (x)*/
+	jmp .LrgbInnerLoopIncrement 		/*After one iteration check col (x)*/
 
-.LouterLoopIncrement:
+.LrgbOuterLoopIncrement:
 	addl $1, %r12d			    /*Outer: increment y aka row*/
-.LouterLoopCheck:
+.LrgbOuterLoopCheck:
 	cmp %r14d, %r12d				/*compare height to y index*/
-	jge .LexitLoop					/*jump if r14 <= r12 (height <= y)*/
+	jge .LrgbExitLoop					/*jump if r14 <= r12 (height <= y)*/
 	movl $0, %r13d					/*else reset x*/
-	jmp .LinnerLoopCheck		/*Jump to inner loop*/
+	jmp .LrgbInnerLoopCheck		/*Jump to inner loop*/
 
-.LinnerLoopIncrement:
+.LrgbInnerLoopIncrement:
 	addl $1, %r13d					/*Inner: increment x aka col*/
-.LinnerLoopCheck:
+.LrgbInnerLoopCheck:
 	cmp %r15d, %r13d				/*compare x to width*/
-	jge	.LouterLoopIncrement		/*jump if r15 <= r13 (width <= x)*/
-	jmp .LupdatePixel				/*else jump to updatePixel*/
+	jge	.LrgbOuterLoopIncrement		/*jump if r15 <= r13 (width <= x)*/
+	jmp .LrgbUpdatePixel				/*else jump to updatePixel*/
 	
-.LexitLoop:
+.LrgbExitLoop:
 	pop %r15
 	pop %r14
 	pop %r13
@@ -514,10 +518,145 @@ imgproc_rgb:
  * Parameters:
  *   %rdi - pointer to original struct Image
  *   %rsi - pointer to output struct Image
+ *
+ * Stack memory:
+ * %r10 -> used to store alpha
+ * %r11 -> used to store green * 128
+ * %r12 -> used to store red * 79
+ * %r13 -> used to store pixel ie input_img -> data[index]
+ * %r14 -> used to store the index for the loop
+ * %r15 -> used to store width * height aka iteration bound
+ * %rdi -> used to call get_rgba and combineData (need to save input img)
+ * %rsi -> used to call combineData (need to save output img)
+ * $rdx -> used to call combineData (saved just in case other functions clober it)
+ * $rcx -> used to call combineData (saved just in case other functions clober it)
  */
 	.globl imgproc_grayscale
 imgproc_grayscale:
 	/* TODO: implement */
+	push %r10
+	push %r11
+	push %r12
+	push %r13
+	push %r14
+	push %r15
+
+	/*height*/
+	movq $1, %r10
+	movl (%rdi, %r10, 4), %r14d				/*height in r14*/
+
+	/*width*/
+	movq $0, %r10
+	movl (%rdi, %r10, 4), %r15d       /*width in r15*/
+
+	imull %r14d, %r15d									/*r15 = bound*/
+	movq $0, %r14											/*r14 = index*/
+
+	jmp .LgrayscaleConditionCheck
+
+.LgrayscaleLoop:
+	/*reset the registers*/
+	movq $0, %r8										
+	movq $0, %r9										
+	movq $0, %r10										
+	movq $0, %r11										
+	movq $0, %r12										
+	movq $0, %r13										
+	movq $0, %rax										
+
+	movq 8(%rdi), %r13										/*value located at rsi+8 is the address to the array (address of array in r8)*/
+	movl (%r13,%r14,4), %r13d			    		/*(pixel) incrementing the address to the array to access element %r14*/
+	
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	movl %r13d, %edi											/*move pixel to arg 1*/
+	call get_r
+	imull $79, %eax												/*red * 79 -> rax * rdi*/
+	movl %eax, %r12d											/*save to r12*/
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	movl %r13d, %edi											/*move pixel to arg 1*/
+	call get_g
+	imull $128, %eax											/*green * 128*/
+	movl %eax, %r11d											/*green to r11*/
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	movl %r13d, %edi											/*move pixel to arg 1*/
+	call get_a
+	movl %eax, %r10d											/*move alpha to r10*/
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	movl %r13d, %edi											/*move pixel to arg 1*/
+	call get_b													
+	imull $49, %eax											  /*blue * 49 -> leave in eax*/
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+
+	addl %r12d, %eax										/*blue * 49 + red * 79*/
+	addl %r11d, %eax									  /*blue * 49 + red * 79 + green * 128*/
+
+	push %rdi
+	push %rsi
+	push %rdx
+	push %rcx
+	movq $0, %rdx												/*64 bit division*/
+	movl $256, %r9d											/*divisor = 256*/
+	divl %r9d														/*blue * 49 + red * 79 + green * 128 / 256*/
+	movl %eax, %edi											/* move grayscale pixel to arg 1*/
+	movl %eax, %esi											/* move grayscale pixel to arg 2*/
+	movl %eax, %edx											/* move grayscale pixel to arg 3*/
+	movl %r10d, %ecx										/* move alpha to arg4*/
+	call combineData
+	pop %rcx
+	pop %rdx
+	pop %rsi
+	pop %rdi
+
+	movq 8(%rsi), %r8									/*value located at rsi+8 is the address to the array (address of array in r8)*/
+	leaq (%r8,%r14,4), %r8			  		/*incrementing the address to the array to access element x*/
+	movl %eax, (%r8)									/*this stores eax as the new pointer for some reason*/
+
+	jmp .LgrayscaleIncrement
+
+.LgrayscaleIncrement:
+	addl $1, %r14d 										/*index++*/
+.LgrayscaleConditionCheck:
+	cmp %r15d, %r14d									/*bound vs index*/
+	jl .LgrayscaleLoop 								/*jump to loop if bound>index*/
+	nop 
+
+.LgrayscaleExit:
+	pop %r15
+	pop %r14
+	pop %r13
+	pop %r12
+	pop %r11
+	pop %r10
 	ret
 
 /*
