@@ -475,45 +475,8 @@ imgproc_rgb:
 	jmp .LouterLoopCheck
 
 .LupdatePixel:
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
-	push %rax
 
 	addl $1, %r10d									/*check num of iterations*/
-	movl %r12d, %r11d									/*move y to r11 to get pixel*/
-	imull %r15d, %r11d							/* width * y */
-	addl %r13d, %r11d								/*x + width * y*/
-	movl 8(%rdi, %r11, 4), %r8d			/*8 from the first 2 fields move pixel value to r8*/
-
-	/*top left*/
-	movl %r12d, %r11d						 /* r11 used to hold index in output*/
-	imull $2, %r11d								/*2 * y*/
-	imull %r15d, %r11d						/*2 * y * width*/
-	addl %r13d, %r11d							/*2 * y * width + x*/
-	movl %r8d, 8(%rsi, %r11, 4)	/*move top left*/
-
-	/*top right*/
-	push %r8				/*save pixel*/
-	movl %r8d, %edi
-	call get_r			
-	push 
-
-
-	/*bottom left*/
-
-	/*bottom right*/
-
-
-	movl %r8d, %edi						/*move pixel to arg1*/
-
-
-	pop %rax
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
 
 	jmp .LinnerLoopIncrement 		/*After one iteration check col (x)*/
 
