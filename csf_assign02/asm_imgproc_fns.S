@@ -171,72 +171,72 @@ gradient:
  */
 	.globl getFadedComponentValue
 getFadedComponentValue:
-	push %r12                      /*Saving callee registers*/
-	push %r13
-	push %r14
-	push %r15
+	pushq %r12                      /*Saving callee registers*/
+	pushq %r13
+	pushq %r14
+	pushq %r15
 
 	/*calling getMapped Pixel*/
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
-	push %r8
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %r8
 	movq %rdi, %rdi                 /*moving rowIndex for arg1*/
 	movq %rcx, %rsi                 /*moving height for arg2*/
 	call getMappedPixel
 	movq %rax, %r12                 /*r12 - mappedRow var*/
-	pop %r8 
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi 
+	popq %r8 
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi 
 	
 	/*calling getMapped Pixel for col*/
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
-	push %r8
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %r8
 	movq %rsi, %rdi                 /*moving colIndex for arg1*/
 	movq %rdx, %rsi                 /*moving width for arg2*/
 	call getMappedPixel
 	movq %rax, %r13                 /*r13 - mappedCol reg*/
-	pop %r8 
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi 
+	popq %r8 
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi 
 
 	/*calling gradient for r12 - mappedRow*/
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
-	push %r8
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %r8
 	movq %r12, %rdi                 /*moving mappedRow into arg1*/
 	call gradient
 	movq %rax, %r12                 /*moving ret to r12*/
-	pop %r8 
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi 
+	popq %r8 
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi 
 
 	/*calling gradient for r13 - mappedCol*/
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
-	push %r8
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %r8
 	movq %r13, %rdi                /*moving mappedCol into arg1*/
 	call gradient
 	movq %rax, %r13                /*moving ret to r13*/
-	pop %r8 
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi 
+	popq %r8 
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi 
 	
 	imulq %r8, %r12                /*color * gradient(mappedRow)*/
 	imulq %r12, %r13               /*color * gradient(mappedRow) * gradient(mappedCol)*/
@@ -247,10 +247,10 @@ getFadedComponentValue:
 	divq %rsi                      /*color * gradient(mappedRow) * gradient(mappedCol) / trillion*/
 
 	/*popping callee registers*/ 
-	pop %r15
-	pop %r14
-	pop %r13
-	pop %r12
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
 
 	ret
 
@@ -268,8 +268,8 @@ getFadedComponentValue:
  */
 	.globl getAdjustedIndex
 getAdjustedIndex:
-	push %r12              /*save callee*/
-	push %rdx              /*edx gets clobbered by dividing*/
+	pushq %r12              /*save callee*/
+	pushq %rdx              /*edx gets clobbered by dividing*/
 	
 	movq $0, %rdx          /*64 bit value*/
 	movl %edi, %eax        /*index into eax ie dividend*/
@@ -278,12 +278,12 @@ getAdjustedIndex:
 	movl %eax, %r12d       /*r12d = index % indexingWidth -> col*/
 	movl %edx, %eax        /*eax = actualWidth*/
 
-	pop %rdx               /*restore clobbered register*/
+	popq %rdx               /*restore clobbered register*/
 	
 	imull %edx, %r12d      /*actualWidth * row*/
 	addl %r12d, %eax       /*actualWidth * row + col*/
 
-	pop %r12
+	popq %r12
 
 	ret 
 
@@ -307,13 +307,13 @@ getAdjustedIndex:
 	.globl fillKaleidoscopeIndexArray
 fillKaleidoscopeIndexArray:
 	/*save callee reigsters*/
-	push %r11
-	push %r12
-	push %r13
-	push %r14
-	push %r15
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
 
-	push %rdx                            /*clobbered by division*/
+	pushq %rdx                            /*clobbered by division*/
 	
 	/*calculate half index*/
 	
@@ -322,7 +322,7 @@ fillKaleidoscopeIndexArray:
 	movl $2, %r11d											 /*put diving factor into r11*/
 	divl %r11d                           /*indexingDimension / 2*/
 	movl %eax, %r12d                     /*r12 -> halfIndex = indexingDimension / 2*/
-	pop %rdx														 /*restore rdx that was clobbered*/
+	popq %rdx														 /*restore rdx that was clobbered*/
 
 	/*widthDistanceFromMiddle*/
 	movl %r12d, %r13d										 
@@ -410,11 +410,11 @@ fillKaleidoscopeIndexArray:
 	movl %r15d, (%rdi, %r11, 4)         /* save to index 7*/
 
 	/*restore callee register states*/
-	pop %r15
-	pop %r14
-	pop %r13
-	pop %r12
-	pop %r11
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
 	
 	ret
 
@@ -456,12 +456,12 @@ fillKaleidoscopeIndexArray:
 	.globl imgproc_rgb
 imgproc_rgb:
 	/* TODO: implement */
-	push %r10
-	push %r11
-	push %r12
-	push %r13
-	push %r14
-	push %r15
+	pushq %r10
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
 
 	/*height*/
 	movq $1, %r10
@@ -500,12 +500,12 @@ imgproc_rgb:
 	jmp .LrgbUpdatePixel				/*else jump to updatePixel*/
 	
 .LrgbExitLoop:
-	pop %r15
-	pop %r14
-	pop %r13
-	pop %r12
-	pop %r11
-	pop %r10
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
 	
 	ret
 
@@ -534,12 +534,12 @@ imgproc_rgb:
 	.globl imgproc_grayscale
 imgproc_grayscale:
 	/* TODO: implement */
-	push %r10
-	push %r11
-	push %r12
-	push %r13
-	push %r14
-	push %r15
+	pushq %r10
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
 
 	/*height*/
 	movq $1, %r10
@@ -567,63 +567,63 @@ imgproc_grayscale:
 	movq 8(%rdi), %r13										/*value located at rsi+8 is the address to the array (address of array in r8)*/
 	movl (%r13,%r14,4), %r13d			    		/*(pixel) incrementing the address to the array to access element %r14*/
 	
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
 	movl %r13d, %edi											/*move pixel to arg 1*/
 	call get_r
 	imull $79, %eax												/*red * 79 -> rax * rdi*/
 	movl %eax, %r12d											/*save to r12*/
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
 
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
 	movl %r13d, %edi											/*move pixel to arg 1*/
 	call get_g
 	imull $128, %eax											/*green * 128*/
 	movl %eax, %r11d											/*green to r11*/
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
 
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
 	movl %r13d, %edi											/*move pixel to arg 1*/
 	call get_a
 	movl %eax, %r10d											/*move alpha to r10*/
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
 
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
 	movl %r13d, %edi											/*move pixel to arg 1*/
 	call get_b													
 	imull $49, %eax											  /*blue * 49 -> leave in eax*/
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
 
 	addl %r12d, %eax										/*blue * 49 + red * 79*/
 	addl %r11d, %eax									  /*blue * 49 + red * 79 + green * 128*/
 
-	push %rdi
-	push %rsi
-	push %rdx
-	push %rcx
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
 	movq $0, %rdx												/*64 bit division*/
 	movl $256, %r9d											/*divisor = 256*/
 	divl %r9d														/*blue * 49 + red * 79 + green * 128 / 256*/
@@ -632,10 +632,10 @@ imgproc_grayscale:
 	movl %eax, %edx											/* move grayscale pixel to arg 3*/
 	movl %r10d, %ecx										/* move alpha to arg4*/
 	call combineData
-	pop %rcx
-	pop %rdx
-	pop %rsi
-	pop %rdi
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
 
 	movq 8(%rsi), %r8									/*value located at rsi+8 is the address to the array (address of array in r8)*/
 	leaq (%r8,%r14,4), %r8			  		/*incrementing the address to the array to access element x*/
@@ -651,12 +651,12 @@ imgproc_grayscale:
 	nop 
 
 .LgrayscaleExit:
-	pop %r15
-	pop %r14
-	pop %r13
-	pop %r12
-	pop %r11
-	pop %r10
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
 	ret
 
 /*
