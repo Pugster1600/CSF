@@ -496,7 +496,45 @@ imgproc_rgb:
 	addl $1, %r13d					/*Inner: increment x aka col*/
 .LrgbInnerLoopCheck:
 	cmp %r15d, %r13d				/*compare x to width*/
-	jge	.LrgbOuterLoopIncrement		/*jump if r15 <= r13 (width <= x)*/
+	jge .LrgbOuterLoopIncrement		/*jump if r15 <= r13 (width <= x)*/
+	movl (%rdi, %r12d, 4), %eax     /* Load pixel from input_img */
+
+	
+	movl %eax, (%rsi, %r12d, 8)	/* Top Left pretty simple just add img address w/ length */
+
+	
+	movb %al, %dil
+	call get_r
+	movb %al, %bl
+	xorl %eax, %eax
+	movb %dil, %al
+	call get_a
+	shll $24, %eax
+	orl %ebx, %eax
+	movl %eax, (%rsi, %r12d, 8, %r15d, 4)
+
+    
+	movb %al, %dil
+	call get_g
+	movb %al, %bl
+	xorl %eax, %eax
+	movb %dil, %al
+	call get_a
+	shll $24, %eax
+	orl %ebx, %eax
+	movl %eax, (%rsi, %r12d, 8, %r14d, 4)
+
+	
+	movb %al, %dil
+	call get_b
+	movb %al, %bl
+	xorl %eax, %eax
+	movb %dil, %al
+	call get_a
+	shll $24, %eax
+	orl %ebx, %eax
+	movl %eax, (%rsi, %r12d, 8, %r14d, 4, %r15d, 4)
+	movl %eax, (%rsi, %r12d, 8)     /* Store pixel to output_img */
 	jmp .LrgbUpdatePixel				/*else jump to updatePixel*/
 	
 .LrgbExitLoop:
