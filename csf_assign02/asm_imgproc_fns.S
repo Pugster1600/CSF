@@ -503,31 +503,31 @@ imgproc_rgb:
 	movl %eax, (%rsi, %r12d, 8)	/* Top Left pretty simple just add img address w/ length */
 
 	
-	movb %al, %dil
-	call get_r
-	movb %al, %bl
-	xorl %eax, %eax
-	movb %dil, %al
-	call get_a
-	shll $24, %eax
-	orl %ebx, %eax
-	movl %eax, (%rsi, %r12d, 8, %r15d, 4)
+	movl %eax, %edi  /*Top right square, move eax into rdi */
+	call get_r	/*call get r, uses the rdi register so address from before step passed in */
+	movb %al, %bl	/* moves returned value into ebx register to save it for later */
+	xorl %eax, %eax 	/* clears eax register */
+	movb %dil, %al	/*	address of pixel still saved into dil and rdi register */
+	call get_a	/* call get a, gets alpha value and will be saved into eax */
+	shll $24, %eax	/* shifts eax register in order to get alpha values (saved in right 8) */
+	orl %ebx, %eax	/* orl does bitwise OR operation in order to add the alpha and red alues */
+	movl %eax, (%rsi, %r12d, 8, %r15d, 4)	/* moves eax into rsi register (output images) */
 
     
-	movb %al, %dil
-	call get_g
-	movb %al, %bl
-	xorl %eax, %eax
-	movb %dil, %al
+	movb %al, %dil	/* Bottom left picture */
+	call get_g	/* call get g, moves 8 lower bits from eax into get_g */
+	movb %al, %bl	/* moves original value into %bl for later use */
+	xorl %eax, %eax	/* clears eax */
+	movb %dil, %al	/* move the blue value back into eax */
 	call get_a
-	shll $24, %eax
+	shll $24, %eax	
 	orl %ebx, %eax
 	movl %eax, (%rsi, %r12d, 8, %r14d, 4)
 
 	
-	movb %al, %dil
-	call get_b
-	movb %al, %bl
+	movb %eax, %edi	/* shift pixel into argument register for get_b */
+	call get_b	/* calls method */
+	movb %al, %bl	/* moves subregister from return into %ebx for safekeeping */
 	xorl %eax, %eax
 	movb %dil, %al
 	call get_a
