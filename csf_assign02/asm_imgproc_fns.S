@@ -456,99 +456,108 @@ fillKaleidoscopeIndexArray:
 	.globl imgproc_rgb
 imgproc_rgb:
 	/* TODO: implement */
-	pushq %r10
-	pushq %r11
+
+	pushq %rbp
+	pushq %rbx
 	pushq %r12
 	pushq %r13
 	pushq %r14
 	pushq %r15
 
-	/*height*/
-	movq $1, %r10
-	movl (%rdi, %r10, 4), %r14d				/*height in r14*/
+	/* Load width and height from struct */
+	movl (%rdi), %r15d      /* width in r15d */
+	movl 4(%rdi), %r14d     /* height in r14d */
+	movq 8(%rdi), %r8       /* input buffer address in r8 */
+	movq 8(%rsi), %r9       /* output buffer address in r9 */
 
-	/*width*/
-	movq $0, %r10
-	movl (%rdi, %r10, 4), %r15d       /*width in r15*/
+	xorl %r12d, %r12d      /* y index in r12d */
+	xorl %r13d, %r13d      /* x index in r13d */
 
-	movl $0, %r12d										/*(height) y index in r12*/
-	movl $0, %r13d										/*(width) x index in r13*/
+	
 
-	movl $0, %r10d										/*used to check num of iterations*/
+.LrgbOuterLoop:
+    cmpl %r14d, %r12d      /* compare y with height */
+    jge .LrgbExit
 
-	jmp .LrgbOuterLoopCheck
-
-.LrgbUpdatePixel:
-
-	addl $1, %r10d									/*check num of iterations*/
-
-	jmp .LrgbInnerLoopIncrement 		/*After one iteration check col (x)*/
-
-.LrgbOuterLoopIncrement:
-	addl $1, %r12d			    /*Outer: increment y aka row*/
-.LrgbOuterLoopCheck:
-	cmp %r14d, %r12d				/*compare height to y index*/
-	jge .LrgbExitLoop					/*jump if r14 <= r12 (height <= y)*/
-	movl $0, %r13d					/*else reset x*/
-	jmp .LrgbInnerLoopCheck		/*Jump to inner loop*/
-
-.LrgbInnerLoopIncrement:
-	addl $1, %r13d					/*Inner: increment x aka col*/
-.LrgbInnerLoopCheck:
-	/* height in r12, width in r15 */
+	
+.LrgbInnerLoop:
+	
+	/* y index in r12, x index in r13 */
+	/* height of image in r14, width of r15 */
 	/* input image in rdi, output in rsi */
-	cmp %r15d, %r13d				/*compare x to width*/
-	jge .LrgbOuterLoopIncrement		/*jump if r15 <= r13 (width <= x)*/
-	movl (%rdi, %r12, 4), %eax     /* Load pixel from input_img */
+	cmpl %r15d, %r13d      /* compare x with width */
+	jge .LrgbNextRow
+	
+	/* Calculate input pixel address: input[y * width + x] */
+	movl %r12d, %eax       /* y */
+	imull %r15d, %eax             /* y * width */
+	addl %r13d, %eax       /* y * width + x */
+	movl (%r8, %rax, 4), %ebx  /* Load pixel into ebx */
 
 	
-	movl %eax, (%rsi, %r12, 8)	/* Top Left pretty simple just add img address w/ length */
+	movl %ebx, (%r9, %rax, 4)  /* Top Left pretty simple just add img address w/ length */
+
+	/* Top Right: Red only */
+	movl %ebx, %edi        /* pixel to edi for get_r */
+	call get_r
+	movzbl %al, %ecx       /* save red value */
+	movl %ebx, %edi        /* pixel for get_a */
+	call get_a
+	shll $24, %eax         /* shift alpha to position */
+	orl %ecx, %eax         /* combine R and A */
+	movl %r12d, %ecx       /* y */
+	imull %r15d, %ecx      /* y * width */
+	addl %r13d, %ecx       /* y * width + x */
+	addl %r15d, %ecx       /* add width for right side */
+	movl %eax, (%r9, %rcx, 4)  /* store red pixel */
 
 	
-	movl %eax, %edi  /*Top right square, move eax into rdi */
-	call get_r	/*call get r, uses the rdi register so address from before step passed in */
-	movb %al, %bl	/* moves returned value into ebx register to save it for later */
-	xorl %eax, %eax 	/* clears eax register */
-	movb %dil, %al	/*	address of pixel still saved into dil and rdi register */
-	call get_a	/* call get a, gets alpha value and will be saved into eax */
-	shll $24, %eax	/* shifts eax register in order to get alpha values (saved in right 8) */
-	orl %ebx, %eax	/* orl does bitwise OR operation in order to add the alpha and red alues */
-	lea (%rsi, %r12, 8), %rbx
-	lea (%rbx, %r14, 4), %rbx
-	movl %eax, (%rbx)	/* moves eax into rsi register (output images) */
+	/* Bottom Left: Green only */
+	movl %ebx, %edi        /* pixel to edi for get_g */
+	call get_g
+	movzbl %al, %ecx       /* save green value */
+	movl %ebx, %edi        /* pixel for get_a */
+	call get_a
+	shll $24, %eax         /* shift alpha to position */
+	orl %ecx, %eax         /* combine G and A */
+	movl %r12d, %ecx       /* y */
+	addl %r14d, %ecx       /* y + height for bottom */
+	imull %r15d, %ecx      /* (y + height) * width */
+	addl %r13d, %ecx       /* (y + height) * width + x */
+	movl %eax, (%r9, %rcx, 4)  /* store green pixel */
 
     
-	movl %eax, %edi	/* Bottom left picture */
-	call get_g	/* call get g, moves 8 lower bits from eax into get_g */
-	movb %al, %bl	/* moves original value into %bl for later use */
-	xorl %eax, %eax	/* clears eax */
-	movb %dil, %al	/* move the blue value back into eax */
+	/* Bottom Right: Blue only */
+	movl %ebx, %edi        /* pixel to edi for get_b */
+	call get_b
+	movzbl %al, %ecx       /* save blue value */
+	movl %ebx, %edi        /* pixel for get_a */
 	call get_a
-	shll $24, %eax	
-	orl %ebx, %eax
-	lea (%rsi, %r12, 8), %rbx
-	lea (%rbx, %r14, 4), %rbx
-	movl %eax, (%rbx)
+	shll $24, %eax         /* shift alpha to position */
+	orl %ecx, %eax         /* combine B and A */
+	movl %r12d, %ecx       /* y */
+	addl %r14d, %ecx       /* y + height for bottom */
+	imull %r15d, %ecx      /* (y + height) * width */
+	addl %r13d, %ecx       /* (y + height) * width + x */
+	addl %r15d, %ecx       /* add width for right side */
+	movl %eax, (%r9, %rcx, 4)  /* store blue pixel */
+	
+	/* Increment x */
+	incl %r13d
+	jmp .LrgbInnerLoop
 
+.LrgbNextRow:
+	xorl %r13d, %r13d      /* reset x */
+        incl %r12d             /* increment y */
+        jmp .LrgbOuterLoop
 	
-	movl %eax, %edi	/* shift pixel into argument register for get_b */
-	call get_b	/* calls method */
-	movb %al, %bl	/* moves subregister from return into %ebx for safekeeping */
-	xorl %eax, %eax
-	movb %dil, %al
-	call get_a
-	shll $24, %eax
-	orl %ebx, %eax
-	movl %eax, (%rsi, %r12, 8)     /* Store pixel to output_img */
-	jmp .LrgbUpdatePixel				/*else jump to updatePixel*/
-	
-.LrgbExitLoop:
+.LrgbExit:
 	popq %r15
 	popq %r14
 	popq %r13
 	popq %r12
-	popq %r11
-	popq %r10
+	popq %rbx
+	popq %rbp
 	
 	ret
 
