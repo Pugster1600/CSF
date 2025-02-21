@@ -495,12 +495,14 @@ imgproc_rgb:
 .LrgbInnerLoopIncrement:
 	addl $1, %r13d					/*Inner: increment x aka col*/
 .LrgbInnerLoopCheck:
+	/* height in r12, width in r15 */
+	/* input image in rdi, output in rsi */
 	cmp %r15d, %r13d				/*compare x to width*/
 	jge .LrgbOuterLoopIncrement		/*jump if r15 <= r13 (width <= x)*/
-	movl (%rdi, %r12d, 4), %eax     /* Load pixel from input_img */
+	movl (%rdi, %r12, 4), %eax     /* Load pixel from input_img */
 
 	
-	movl %eax, (%rsi, %r12d, 8)	/* Top Left pretty simple just add img address w/ length */
+	movl %eax, (%rsi, %r12, 8)	/* Top Left pretty simple just add img address w/ length */
 
 	
 	movl %eax, %edi  /*Top right square, move eax into rdi */
@@ -511,10 +513,12 @@ imgproc_rgb:
 	call get_a	/* call get a, gets alpha value and will be saved into eax */
 	shll $24, %eax	/* shifts eax register in order to get alpha values (saved in right 8) */
 	orl %ebx, %eax	/* orl does bitwise OR operation in order to add the alpha and red alues */
-	movl %eax, (%rsi, %r12d, 8, %r15d, 4)	/* moves eax into rsi register (output images) */
+	lea (%rsi, %r12, 8), %rbx
+	lea (%rbx, %r14, 4), %rbx
+	movl %eax, (%rbx)	/* moves eax into rsi register (output images) */
 
     
-	movb %al, %dil	/* Bottom left picture */
+	movl %eax, %edi	/* Bottom left picture */
 	call get_g	/* call get g, moves 8 lower bits from eax into get_g */
 	movb %al, %bl	/* moves original value into %bl for later use */
 	xorl %eax, %eax	/* clears eax */
@@ -522,10 +526,12 @@ imgproc_rgb:
 	call get_a
 	shll $24, %eax	
 	orl %ebx, %eax
-	movl %eax, (%rsi, %r12d, 8, %r14d, 4)
+	lea (%rsi, %r12, 8), %rbx
+	lea (%rbx, %r14, 4), %rbx
+	movl %eax, (%rbx)
 
 	
-	movb %eax, %edi	/* shift pixel into argument register for get_b */
+	movl %eax, %edi	/* shift pixel into argument register for get_b */
 	call get_b	/* calls method */
 	movb %al, %bl	/* moves subregister from return into %ebx for safekeeping */
 	xorl %eax, %eax
@@ -533,8 +539,7 @@ imgproc_rgb:
 	call get_a
 	shll $24, %eax
 	orl %ebx, %eax
-	movl %eax, (%rsi, %r12d, 8, %r14d, 4, %r15d, 4)
-	movl %eax, (%rsi, %r12d, 8)     /* Store pixel to output_img */
+	movl %eax, (%rsi, %r12, 8)     /* Store pixel to output_img */
 	jmp .LrgbUpdatePixel				/*else jump to updatePixel*/
 	
 .LrgbExitLoop:
