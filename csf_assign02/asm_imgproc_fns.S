@@ -496,7 +496,8 @@ imgproc_rgb:
 
 	/* Calculate 2*width for easier calculations */
 	movl %r15d, %edx
-	shll $1, %edx  
+	shll $1, %edx
+	pushq %rdx
 
 	/* y * 2*width + x */
 	movl %r12d, %eax
@@ -505,43 +506,61 @@ imgproc_rgb:
 	movl %ebx, (%r9, %rax, 4)
 
 	/* Top Right: Red only */
-	movl %ebx, %edi
+	movl %ebx, %edi /*moving pixel to arg1*/
 	call get_r
-	movzbl %al, %ecx
-	movl %ebx, %edi
+	movl %eax, %ecx /*red to arg4*/
+	movl %ebx, %edi /*pixel to arg1*/
 	call get_a
-	shll $24, %eax
-	orl %ecx, %eax
-	movl %r12d, %ecx
-	imull %edx, %ecx
+
+	movl %ecx, %edi /*red to arg1*/
+	movl %eax, %ecx /*alpha to arg4*/                                                                                 /* move grayscale pixel to arg 1*/
+        movl $0, %esi
+        movl $0, %edx                                                                                 /* move grayscale pixel to arg 3*/
+        call combineData
+
+	popq %rdx
+	/* move alpha to arg4*/
+	movl %r12d, %ecx    /*move y index*/
+	imull %edx, %ecx    /*edx = 2 * width */
 	addl %r13d, %ecx
 	addl %r15d, %ecx
-	movl %eax, (%r9, %rcx, 4)
+	movl %eax, (%r9, %rcx, 4) /* Calculate new index */
+	pushq %rdx
 	
 	/* Bottom Left: Green only */
 	/* y * 2*width + (width + x) */
 	movl %ebx, %edi        /* pixel to edi for get_g */
 	call get_g
-	movzbl %al, %ecx       /* save green value */
+	movl %eax, %ecx       /* save green value  to arg2*/
 	movl %ebx, %edi        /* pixel for get_a */
 	call get_a
-	shll $24, %eax         /* shift alpha to position */
-	orl %ecx, %eax
+	movl %ecx, %esi /*green to arg2*/
+        movl %eax, %ecx /*alpha to arg4*/                                                                                 /* move grayscale pixel to arg 1*/
+        movl $0, %edi
+        movl $0, %edx                                                                                 /* move grayscale pixel to arg 3*/
+        call combineData
+
+	popq %rdx
 	movl %r12d, %ecx
 	addl %r14d, %ecx       /* y + height */
 	imull %edx, %ecx       /* (y + height) * 2*width */
 	addl %r13d, %ecx       /* (y + height) * 2*width + x */
 	movl %eax, (%r9, %rcx, 4)
 
-    
+	
 	/* Bottom Right: Blue only */
 	movl %ebx, %edi        /* pixel to edi for get_b */
 	call get_b
 	movzbl %al, %ecx       /* save blue value */
 	movl %ebx, %edi        /* pixel for get_a */
 	call get_a
-	shll $24, %eax         /* shift alpha to position */
-	orl %ecx, %eax         /* combine B and A */
+	movl %ecx, %edx /*blue to arg3*/
+        movl %eax, %ecx /*alpha to arg4*/                                                                                 
+        movl $0, %edi
+        movl $0, %edx 
+        call combineData
+
+	
 	movl %r12d, %ecx
 	addl %r14d, %ecx      /* y + height */
 	imull %edx, %ecx      /* (y + height) * 2*width */
