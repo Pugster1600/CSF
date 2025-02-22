@@ -473,7 +473,9 @@ imgproc_rgb:
 	xorl %r12d, %r12d      /* y index in r12d */
 	xorl %r13d, %r13d      /* x index in r13d */
 
-	
+	/* Calculate 2*width to help w time complexity */
+        movl %r15d, %r10d
+        shll $1, %r10d
 
 .LrgbOuterLoop:
     cmpl %r14d, %r12d      /* compare y with height */
@@ -494,76 +496,70 @@ imgproc_rgb:
 	addl %r13d, %eax       /* y * width + x */
 	movl (%r8, %rax, 4), %ebx  /* Load pixel into ebx */
 
-	/* Calculate 2*width for easier calculations */
-	movl %r15d, %edx
-	shll $1, %edx
-	pushq %rdx
-
+	
+	/*Top Left */
 	/* y * 2*width + x */
 	movl %r12d, %eax
-	imull %edx, %eax      # y * 2*width
+	imull %r10d, %eax      # y * 2*width
 	addl %r13d, %eax      # y * 2*width + x
 	movl %ebx, (%r9, %rax, 4)
 
-	/* Top Right: Red only */
+	/* top right red */
 	movl %ebx, %edi /*moving pixel to arg1*/
 	call get_r
-	movl %eax, %ecx /*red to arg4*/
+	movl %eax, %r11d /*red to arg4*/
 	movl %ebx, %edi /*pixel to arg1*/
 	call get_a
 
-	movl %ecx, %edi /*red to arg1*/
-	movl %eax, %ecx /*alpha to arg4*/                                                                                 /* move grayscale pixel to arg 1*/
-        movl $0, %esi
-        movl $0, %edx                                                                                 /* move grayscale pixel to arg 3*/
+	movl %r11d, %edi /*red to arg1*/
+	xorl %esi, %esi /* clear green */
+	xorl %edx, %edx /* clear blue */
+	movl %eax, %ecx /*alpha to arg4*/                      
         call combineData
 
-	popq %rdx
-	/* move alpha to arg4*/
+	
 	movl %r12d, %ecx    /*move y index*/
-	imull %edx, %ecx    /*edx = 2 * width */
+	imull %r10d, %ecx    /*r10 = 2 * width */
 	addl %r13d, %ecx
 	addl %r15d, %ecx
 	movl %eax, (%r9, %rcx, 4) /* Calculate new index */
-	pushq %rdx
 	
-	/* Bottom Left: Green only */
+	
+	/* Bottom Left: Green  */
 	/* y * 2*width + (width + x) */
 	movl %ebx, %edi        /* pixel to edi for get_g */
 	call get_g
-	movl %eax, %ecx       /* save green value  to arg2*/
+	movl %eax, %r11d       /* save green value */
 	movl %ebx, %edi        /* pixel for get_a */
 	call get_a
-	movl %ecx, %esi /*green to arg2*/
-        movl %eax, %ecx /*alpha to arg4*/                                                                                 /* move grayscale pixel to arg 1*/
-        movl $0, %edi
-        movl $0, %edx                                                                                 /* move grayscale pixel to arg 3*/
+	xorl %edi, %edi /* clear red */
+	movl %r11d, %esi /* green to arg2 */
+	xorl %edx, %edx /* clear blue */
+        movl %eax, %ecx /*alpha to arg4*/                                                                              
         call combineData
-
-	popq %rdx
+	
 	movl %r12d, %ecx
 	addl %r14d, %ecx       /* y + height */
-	imull %edx, %ecx       /* (y + height) * 2*width */
+	imull %r10d, %ecx       /* (y + height) * 2*width */
 	addl %r13d, %ecx       /* (y + height) * 2*width + x */
 	movl %eax, (%r9, %rcx, 4)
 
 	
-	/* Bottom Right: Blue only */
+	/* Bottom Right: Blue */
 	movl %ebx, %edi        /* pixel to edi for get_b */
 	call get_b
-	movzbl %al, %ecx       /* save blue value */
+	movl %eax, %r11d       /* save blue value */
 	movl %ebx, %edi        /* pixel for get_a */
 	call get_a
-	movl %ecx, %edx /*blue to arg3*/
-        movl %eax, %ecx /*alpha to arg4*/                                                                                 
-        movl $0, %edi
-        movl $0, %edx 
+	xorl %edi, %edi /* clear red */
+	xorl %esi, %esi /* clear green */
+	movl %r11d, %edx /*blue to arg3*/
+        movl %eax, %ecx /*alpha to arg4*/ 
         call combineData
 
-	
 	movl %r12d, %ecx
 	addl %r14d, %ecx      /* y + height */
-	imull %edx, %ecx      /* (y + height) * 2*width */
+	imull %r10d, %ecx      /* (y + height) * 2*width */
 	addl %r13d, %ecx
 	addl %r15d, %ecx      /* (y + height) * 2*width + x + width */
 	movl %eax, (%r9, %rcx, 4)
@@ -651,7 +647,7 @@ imgproc_grayscale:
 	pushq %rcx
 	movl %r13d, %edi											/*move pixel to arg 1*/
 	call get_r
-	imull $79, %eax												/*red * 79 -> rax * rdi*/
+	imull $79, %eax		 										/*red * 79 -> rax * rdi*/
 	movl %eax, %r12d											/*save to r12*/
 	popq %rcx
 	popq %rdx
