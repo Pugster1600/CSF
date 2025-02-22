@@ -292,11 +292,11 @@ getAdjustedIndex:
  *
  * Stack memory:
  * -8(%rbp) - %r11 -> used to stored the index
- * -16(%rbp)%r12 -> used to store halfIndex (halfHeight and halfWidth)
- * -24(%rbp)%r13 -> used to store widthDistanceFromMiddle
- * -32(%rbp)%r14 -> used to store heightDistanceFromMiddle
- * -40(%rbp)%r15 -> used to store index calculations
- * -48(%rbp)%rdx -> x value (clobbered by division)
+ * -16(%rbp) - %r12 -> used to store halfIndex (halfHeight and halfWidth)
+ * -24(%rbp) - %r13 -> used to store widthDistanceFromMiddle
+ * -32(%rbp) - %r14 -> used to store heightDistanceFromMiddle
+ * -40(%rbp) - %r15 -> used to store index calculations
+ * -48(%rbp) - %rdx -> x value (clobbered by division)
  */
 	.globl fillKaleidoscopeIndexArray
 fillKaleidoscopeIndexArray:
