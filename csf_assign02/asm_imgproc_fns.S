@@ -27,8 +27,8 @@
  */
  .globl get_r
 get_r:
-	xor %rax, %rax 						 /*clear the entire thing*/
-	shr $24, %edi               /*get bits 31-24 in little endian format*/
+	xor %rax, %rax 						  /*clear the entire return*/
+	shr $24, %edi               /*get bits 31-24 (little endian format)*/
 	movb %dil, %al              /*move the 8-bit value to 8-bit return reg*/
 	ret
 
@@ -44,7 +44,7 @@ get_r:
  */
  .globl get_g
 get_g:
-	xor %rax, %rax 						 /*clear the entire thing*/
+	xor %rax, %rax 						 /*clear the entire return*/
 	shr $16, %edi;             /*get bits 23-16 in %dil*/
 	movb %dil, %al             /*move the 8-bit value to 8-bit return reg*/
 	ret
@@ -61,7 +61,7 @@ get_g:
  */
  .globl get_b
 get_b:
-	xor %rax, %rax 						 /*clear the entire thing*/
+	xor %rax, %rax 						 /*clear the entire return*/
 	shr $8, %edi               /*get bits 15-8 in %dil*/
 	movb %dil, %al             /*move the 8-bit value to 8-bit return reg*/
 	ret
@@ -78,8 +78,8 @@ get_b:
  */
  .globl get_a
 get_a:
-	xor %rax, %rax 						 /*clear the entire thing*/
-	movb %dil, %al         /*move the 8-bit value to 8-bit return reg*/
+	xor %rax, %rax 						 /*clear the entire return*/
+	movb %dil, %al             /*move the 8-bit value to 8-bit return reg*/
 	ret
 
 /*
@@ -99,11 +99,11 @@ get_a:
 combineData:
 	shl $24, %edi          /*move red to bits 31-24 b/c little endian*/
 	shl $16, %esi          /*move green to bits 23-16*/
-	shl $8, %edx           /*move green to bits 15-8*/
+	shl $8, %edx           /*move blue to bits 15-8*/
 
-	or %esi, %edi          /*or with red*/
-	or %edx, %edi 
-	or %ecx, %edi
+	or %esi, %edi          /*or green with red*/
+	or %edx, %edi					 /*or blue*/ 
+	or %ecx, %edi					 /*or alpha*/
 	movl %edi, %eax        /*move the final red into eax*/
 	ret
 
@@ -159,25 +159,21 @@ gradient:
  * %r8 - int8_t color
  *
  * Stack memory:
- * -8(%rbp) - %r12
- * -16(%rbp) - %r13 
- * -24(%rbp) - %r14
- * -32(%rbp) - %r15
- * -40(%rbp) - %rdi - rowIndex
- * -48(%rbp) - %rsi - colIndex
- * -56(%rbp) - %rdx - width
- * -64(%rbp) - %rcx - height
- * -72(%rbp) - %r8 - color
+ * -8(%rbp) - %r12 - used for mappedRow value (ie the row value from 0-2000)
+ * -16(%rbp) - %r13 - used for mappedCol value (ie the col value from 0-2000) and to hold calculations for final return
+ * -24(%rbp) - %rdi - rowIndex -> preserved to keep arguments
+ * -32(%rbp) - %rsi - colIndex -> preserved to keep arguments
+ * -40(%rbp) - %rdx - width -> preserved to keep arguments
+ * -48(%rbp) - %rcx - height -> preserved to keep arguments
+ * -56(%rbp) - %r8 - color -> preserved to keep arguments
  */
 	.globl getFadedComponentValue
 getFadedComponentValue:
 	pushq %r12                      /*Saving callee registers*/
 	pushq %r13
-	pushq %r14
-	pushq %r15
 
 	/*calling getMapped Pixel*/
-	pushq %rdi
+	pushq %rdi										  /*save params*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
@@ -186,14 +182,14 @@ getFadedComponentValue:
 	movq %rcx, %rsi                 /*moving height for arg2*/
 	call getMappedPixel
 	movq %rax, %r12                 /*r12 - mappedRow var*/
-	popq %r8 
+	popq %r8 												/*restore registers*/
 	popq %rcx
 	popq %rdx
 	popq %rsi
 	popq %rdi 
 	
 	/*calling getMapped Pixel for col*/
-	pushq %rdi
+	pushq %rdi										  /*save params*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
@@ -202,37 +198,37 @@ getFadedComponentValue:
 	movq %rdx, %rsi                 /*moving width for arg2*/
 	call getMappedPixel
 	movq %rax, %r13                 /*r13 - mappedCol reg*/
-	popq %r8 
+	popq %r8 												/*restore registers*/
 	popq %rcx
 	popq %rdx
 	popq %rsi
 	popq %rdi 
 
 	/*calling gradient for r12 - mappedRow*/
-	pushq %rdi
+	pushq %rdi										  /*save params*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
 	pushq %r8
 	movq %r12, %rdi                 /*moving mappedRow into arg1*/
 	call gradient
-	movq %rax, %r12                 /*moving ret to r12*/
-	popq %r8 
+	movq %rax, %r12                 /*moving gradient(mappedRow) to r12*/
+	popq %r8												/*restore registers*/
 	popq %rcx
 	popq %rdx
 	popq %rsi
 	popq %rdi 
 
 	/*calling gradient for r13 - mappedCol*/
-	pushq %rdi
+	pushq %rdi										  /*save params*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
 	pushq %r8
 	movq %r13, %rdi                /*moving mappedCol into arg1*/
 	call gradient
-	movq %rax, %r13                /*moving ret to r13*/
-	popq %r8 
+	movq %rax, %r13                /*moving gradient(mappedCol) to r13*/
+	popq %r8											 /*restore registers*/
 	popq %rcx
 	popq %rdx
 	popq %rsi
@@ -247,8 +243,6 @@ getFadedComponentValue:
 	divq %rsi                      /*color * gradient(mappedRow) * gradient(mappedCol) / trillion*/
 
 	/*popping callee registers*/ 
-	popq %r15
-	popq %r14
 	popq %r13
 	popq %r12
 
@@ -297,12 +291,12 @@ getAdjustedIndex:
  * %ecx - int32_t current y
  *
  * Stack memory:
- * %r11 -> used to stored the index
- * %r12 -> used to store halfIndex (halfHeight and halfWidth)
- * %r13 -> used to store widthDistanceFromMiddle
- * %r14 -> used to store heightDistanceFromMiddle
- * %r15 -> used to store index calculations
- * %rdx -> x value (clobbered by division)
+ * -8(%rbp) - %r11 -> used to stored the index
+ * -16(%rbp)%r12 -> used to store halfIndex (halfHeight and halfWidth)
+ * -24(%rbp)%r13 -> used to store widthDistanceFromMiddle
+ * -32(%rbp)%r14 -> used to store heightDistanceFromMiddle
+ * -40(%rbp)%r15 -> used to store index calculations
+ * -48(%rbp)%rdx -> x value (clobbered by division)
  */
 	.globl fillKaleidoscopeIndexArray
 fillKaleidoscopeIndexArray:
@@ -582,7 +576,6 @@ imgproc_rgb:
 	popq %rbp
 	
 	ret
-
 /*
  * void imgproc_grayscale( struct Image *input_img, struct Image *output_img );
  *
@@ -608,6 +601,7 @@ imgproc_rgb:
 	.globl imgproc_grayscale
 imgproc_grayscale:
 	/* TODO: implement */
+	/*save callee registers*/
 	pushq %r10
 	pushq %r11
 	pushq %r12
@@ -617,16 +611,16 @@ imgproc_grayscale:
 
 	/*height*/
 	movq $1, %r10
-	movl (%rdi, %r10, 4), %r14d				/*height in r14*/
+	movl (%rdi, %r10, 4), %r14d				  /*height in r14*/
 
 	/*width*/
 	movq $0, %r10
-	movl (%rdi, %r10, 4), %r15d       /*width in r15*/
+	movl (%rdi, %r10, 4), %r15d         /*width in r15*/
 
 	imull %r14d, %r15d									/*r15 = bound*/
-	movq $0, %r14											/*r14 = index*/
+	movq $0, %r14											  /*r14 = index*/
 
-	jmp .LgrayscaleConditionCheck
+	jmp .LgrayscaleConditionCheck				/*initialize for loop*/
 
 .LgrayscaleLoop:
 	/*reset the registers*/
@@ -641,20 +635,20 @@ imgproc_grayscale:
 	movq 8(%rdi), %r13										/*value located at rsi+8 is the address to the array (address of array in r8)*/
 	movl (%r13,%r14,4), %r13d			    		/*(pixel) incrementing the address to the array to access element %r14*/
 	
-	pushq %rdi
+	pushq %rdi														/*preserve registers*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
 	movl %r13d, %edi											/*move pixel to arg 1*/
 	call get_r
-	imull $79, %eax		 										/*red * 79 -> rax * rdi*/
+	imull $79, %eax												/*red * 79 -> rax * rdi*/
 	movl %eax, %r12d											/*save to r12*/
-	popq %rcx
+	popq %rcx														  /*restore registers*/
 	popq %rdx
 	popq %rsi
 	popq %rdi
 
-	pushq %rdi
+	pushq %rdi														/*preserve registers*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
@@ -662,24 +656,24 @@ imgproc_grayscale:
 	call get_g
 	imull $128, %eax											/*green * 128*/
 	movl %eax, %r11d											/*green to r11*/
-	popq %rcx
+	popq %rcx														  /*restore registers*/
 	popq %rdx
 	popq %rsi
 	popq %rdi
 
-	pushq %rdi
+	pushq %rdi														/*preserve registers*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
 	movl %r13d, %edi											/*move pixel to arg 1*/
 	call get_a
 	movl %eax, %r10d											/*move alpha to r10*/
-	popq %rcx
+	popq %rcx														  /*restore registers*/
 	popq %rdx
 	popq %rsi
 	popq %rdi
 
-	pushq %rdi
+	pushq %rdi														/*preserve registers*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
@@ -691,10 +685,10 @@ imgproc_grayscale:
 	popq %rsi
 	popq %rdi
 
-	addl %r12d, %eax										/*blue * 49 + red * 79*/
-	addl %r11d, %eax									  /*blue * 49 + red * 79 + green * 128*/
+	addl %r12d, %eax											/*blue * 49 + red * 79*/
+	addl %r11d, %eax									  	/*blue * 49 + red * 79 + green * 128*/
 
-	pushq %rdi
+	pushq %rdi														/*preserve registers*/
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
@@ -706,26 +700,23 @@ imgproc_grayscale:
 	movl %eax, %edx											/* move grayscale pixel to arg 3*/
 	movl %r10d, %ecx										/* move alpha to arg4*/
 	call combineData
-	popq %rcx
+	popq %rcx														/*restore registers*/
 	popq %rdx
 	popq %rsi
 	popq %rdi
 
-	movq 8(%rsi), %r8									/*value located at rsi+8 is the address to the array (address of array in r8)*/
-	leaq (%r8,%r14,4), %r8			  		/*incrementing the address to the array to access element x*/
-	movl %eax, (%r8)									/*this stores eax as the new pointer for some reason*/
-
-	jmp .LgrayscaleIncrement
+	movq 8(%rsi), %r8										/*value located at rsi+8 is the address to the array (address of array in r8)*/
+	leaq (%r8,%r14,4), %r8			  			/*incrementing the address to the array to access element x*/
+	movl %eax, (%r8)										/*output_img[index] = grayscale pixel*/
 
 .LgrayscaleIncrement:
 	addl $1, %r14d 										/*index++*/
 .LgrayscaleConditionCheck:
-	cmp %r15d, %r14d									/*bound vs index*/
-	jl .LgrayscaleLoop 								/*jump to loop if bound>index*/
-	nop 
+	cmp %r15d, %r14d									/*bound (row * col) vs index*/
+	jl .LgrayscaleLoop 								/*jump to loop if bound > index*/
 
 .LgrayscaleExit:
-	popq %r15
+	popq %r15														/*restore registers*/
 	popq %r14
 	popq %r13
 	popq %r12
