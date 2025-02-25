@@ -136,7 +136,7 @@ int main( int argc, char **argv ) {
   TEST( test_rgb_basic );
   TEST( test_grayscale_basic );
   //TEST( test_fade_basic );
-  //TEST( test_kaleidoscope_basic );
+  TEST( test_kaleidoscope_basic );
 
   TEST (testGetColor);
   TEST (testCombineData);

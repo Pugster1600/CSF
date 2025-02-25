@@ -444,14 +444,19 @@ fillKaleidoscopeIndexArray:
  *   %rsi - pointer to the output Image (which will have
  *          width and height twice the width/height of the
  *          input image)
+ *
+ * Stack Memory:
+ * -8(%rbp) %rbx - used for index calculations
+ * -16(%rbp) %r12 - used for y index
+ * -24(%rbp) %r13 - used for x index
+ * -32(%rbp) %r14 - used for height
+ * -40(%rbp) %r15 - used for width
  */
 
 
 	.globl imgproc_rgb
 imgproc_rgb:
 	/* TODO: implement */
-
-	pushq %rbp
 	pushq %rbx
 	pushq %r12
 	pushq %r13
@@ -459,20 +464,20 @@ imgproc_rgb:
 	pushq %r15
 
 	/* Load width and height from struct */
-	movl (%rdi), %r15d      /* width in r15d */
-	movl 4(%rdi), %r14d     /* height in r14d */
-	movq 8(%rdi), %r8       /* input buffer address in r8 */
-	movq 8(%rsi), %r9       /* output buffer address in r9 */
+	movl (%rdi), %r15d      					/* width in r15d */
+	movl 4(%rdi), %r14d     					/* height in r14d */
+	movq 8(%rdi), %r8       					/* input buffer address in r8 */
+	movq 8(%rsi), %r9       					/* output buffer address in r9 */
 
-	xorl %r12d, %r12d      /* y index in r12d */
-	xorl %r13d, %r13d      /* x index in r13d */
+	xorl %r12d, %r12d      						/* y index in r12d */
+	xorl %r13d, %r13d      						/* x index in r13d */
 
 	/* Calculate 2*width to help w time complexity */
         movl %r15d, %r10d
         shll $1, %r10d
 
 .LrgbOuterLoop:
-    cmpl %r14d, %r12d      /* compare y with height */
+    cmpl %r14d, %r12d               /* compare y with height */
     jge .LrgbExit
 
 	
@@ -481,81 +486,81 @@ imgproc_rgb:
 	/* y index in r12, x index in r13 */
 	/* height of image in r14, width of r15 */
 	/* input image in rdi, output in rsi */
-	cmpl %r15d, %r13d      /* compare x with width */
+	cmpl %r15d, %r13d      						/* compare x with width */
 	jge .LrgbNextRow
 	
 	/* Calculate input pixel address: input[y * width + x] */
-	movl %r12d, %eax       /* y */
-	imull %r15d, %eax             /* y * width */
-	addl %r13d, %eax       /* y * width + x */
-	movl (%r8, %rax, 4), %ebx  /* Load pixel into ebx */
+	movl %r12d, %eax       						/* y */
+	imull %r15d, %eax             		/* y * width */
+	addl %r13d, %eax       						/* y * width + x */
+	movl (%r8, %rax, 4), %ebx  				/* Load pixel into ebx */
 
 	
 	/*Top Left */
 	/* y * 2*width + x */
 	movl %r12d, %eax
-	imull %r10d, %eax      # y * 2*width
-	addl %r13d, %eax      # y * 2*width + x
+	imull %r10d, %eax      						/* y * 2*width*/
+	addl %r13d, %eax      						/* y * 2*width + x*/
 	movl %ebx, (%r9, %rax, 4)
 
 	/* top right red */
-	movl %ebx, %edi /*moving pixel to arg1*/
+	movl %ebx, %edi 									/*moving pixel to arg1*/
 	call get_r
-	movl %eax, %r11d /*red to arg4*/
-	movl %ebx, %edi /*pixel to arg1*/
+	movl %eax, %r11d 									/*red to arg4*/
+	movl %ebx, %edi 									/*pixel to arg1*/
 	call get_a
 
-	movl %r11d, %edi /*red to arg1*/
-	xorl %esi, %esi /* clear green */
-	xorl %edx, %edx /* clear blue */
-	movl %eax, %ecx /*alpha to arg4*/                      
+	movl %r11d, %edi 									/*red to arg1*/
+	xorl %esi, %esi 									/* clear green */
+	xorl %edx, %edx 									/* clear blue */
+	movl %eax, %ecx 									/*alpha to arg4*/                      
         call combineData
 
 	
-	movl %r12d, %ecx    /*move y index*/
-	imull %r10d, %ecx    /*r10 = 2 * width */
+	movl %r12d, %ecx    							/*move y index*/
+	imull %r10d, %ecx    							/*r10 = 2 * width */
 	addl %r13d, %ecx
 	addl %r15d, %ecx
-	movl %eax, (%r9, %rcx, 4) /* Calculate new index */
+	movl %eax, (%r9, %rcx, 4) 				/* Calculate new index */
 	
 	
 	/* Bottom Left: Green  */
 	/* y * 2*width + (width + x) */
-	movl %ebx, %edi        /* pixel to edi for get_g */
+	movl %ebx, %edi        						/* pixel to edi for get_g */
 	call get_g
-	movl %eax, %r11d       /* save green value */
-	movl %ebx, %edi        /* pixel for get_a */
+	movl %eax, %r11d       						/* save green value */
+	movl %ebx, %edi        						/* pixel for get_a */
 	call get_a
-	xorl %edi, %edi /* clear red */
-	movl %r11d, %esi /* green to arg2 */
-	xorl %edx, %edx /* clear blue */
-        movl %eax, %ecx /*alpha to arg4*/                                                                              
-        call combineData
+	xorl %edi, %edi 									/* clear red */
+	movl %r11d, %esi 									/* green to arg2 */
+	xorl %edx, %edx 									/* clear blue */
+  movl %eax, %ecx 									/*alpha to arg4*/                                                                              
+  call combineData
 	
 	movl %r12d, %ecx
-	addl %r14d, %ecx       /* y + height */
-	imull %r10d, %ecx       /* (y + height) * 2*width */
-	addl %r13d, %ecx       /* (y + height) * 2*width + x */
+	addl %r14d, %ecx       						/* y + height */
+	imull %r10d, %ecx       					/* (y + height) * 2*width */
+	addl %r13d, %ecx       						/* (y + height) * 2*width + x */
 	movl %eax, (%r9, %rcx, 4)
 
 	
 	/* Bottom Right: Blue */
-	movl %ebx, %edi        /* pixel to edi for get_b */
+	movl %ebx, %edi        						/* pixel to edi for get_b */
 	call get_b
-	movl %eax, %r11d       /* save blue value */
-	movl %ebx, %edi        /* pixel for get_a */
+	movl %eax, %r11d       						/* save blue value */
+	movl %ebx, %edi        						/* pixel for get_a */
 	call get_a
 	xorl %edi, %edi /* clear red */
 	xorl %esi, %esi /* clear green */
 	movl %r11d, %edx /*blue to arg3*/
-        movl %eax, %ecx /*alpha to arg4*/ 
-        call combineData
+  movl %eax, %ecx /*alpha to arg4*/ 
+  call combineData
 
 	movl %r12d, %ecx
-	addl %r14d, %ecx      /* y + height */
-	imull %r10d, %ecx      /* (y + height) * 2*width */
+	addl %r14d, %ecx      						/* y + height */
+	imull %r10d, %ecx     						/* (y + height) * 2*width */
 	addl %r13d, %ecx
-	addl %r15d, %ecx      /* (y + height) * 2*width + x + width */
+	addl %r15d, %ecx      						/* (y + height) * 2*width + x + width */
 	movl %eax, (%r9, %rcx, 4)
 	
 	/* Increment x */
@@ -563,9 +568,9 @@ imgproc_rgb:
 	jmp .LrgbInnerLoop
 
 .LrgbNextRow:
-	xorl %r13d, %r13d      /* reset x */
-        incl %r12d             /* increment y */
-        jmp .LrgbOuterLoop
+	xorl %r13d, %r13d      						/* reset x */
+  incl %r12d             						/* increment y */
+  jmp .LrgbOuterLoop
 	
 .LrgbExit:
 	popq %r15
@@ -573,9 +578,8 @@ imgproc_rgb:
 	popq %r13
 	popq %r12
 	popq %rbx
-	popq %rbp
-	
 	ret
+
 /*
  * void imgproc_grayscale( struct Image *input_img, struct Image *output_img );
  *
@@ -785,6 +789,97 @@ imgproc_fade:
 	.globl imgproc_kaleidoscope
 imgproc_kaleidoscope:
 	/* TODO: implement */
+	/* TODO: implement */
+	pushq %rbp
+	pushq %rbx
+	pushq %r10
+	pushq %r11
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+
+	/*height*/
+	movq $1, %r10
+	movl (%rdi, %r10, 4), %r14d				/*height in r14*/
+
+	/*width*/
+	movq $0, %r10
+	movl (%rdi, %r10, 4), %r15d      /*width in r15*/
+
+	cmp %r14, %r15
+	jne .LkaleidoscopeFail					/*jump if they are not equal*/
+
+	movl $1, %r14d									/*bit mask*/
+	andl %r15d, %r14d								/*r14 = isOdd (r15 is width/height)*/
+
+	cmp $0, %r14										/*check if isOdd = 0 (ie even)*/
+	je .LkaleidoscopeEvenIndex
+	addl $1, %r15d									/*increase the width if odd*/
+
+.LkaleidoscopeEvenIndex:
+	movl $0, %r12d									/*r12 = (height) y index*/
+	movl $0, %r13d									/*r13 = (width) x index*/
+
+	movq $0, %rdx            				/*get 64 bit result*/
+	movq %r15, %rax					 				/*height into rax*/
+	movq $2, %r11            
+	divq %r11                				/*halfindex = index / 2*/
+
+	movq %rax, %r11					 				/*r11 = half index*/
+
+	movq %r15, %r10									/*move width index into r10*/
+	subq $1, %r10										/*width index - 1*/
+	imulq %r15, %r10										/*width index * (width index - 1)*/ 
+
+	jmp .LkaleidoscopeOuterLoopCheck
+
+.LkaleidoscopeUpdatePixel:
+	cmp %r13d, %r12d													/*compare y vs x*/
+	jl .LkaleidoscopeInnerLoopIncrement        /*x < y*/
+
+	movq 8(%rdi), %r9										/*value located at rsi+8 is the address to the array (address of array in r8)*/
+	movl (%r9,%r14,4), %r8d			    		/*(pixel) incrementing the address to the array to access element %r14*/
+
+	jmp .LkaleidoscopeInnerLoopIncrement 		/*After one iteration check col (x)*/
+
+.LkaleidoscopeOuterLoopIncrement:
+	addl $1, %r12d			    /*Outer: increment y aka row*/
+.LkaleidoscopeOuterLoopCheck:
+	cmp %r11d, %r12d				/*compare height to half index*/
+	jge .LkaleidoscopeExitLoop					/*jump if r11 <= r12 (halfIndex <= y)*/
+	movl $0, %r13d					/*else reset x*/
+	jmp .LkaleidoscopeInnerLoopCheck		/*Jump to inner loop*/
+
+.LkaleidoscopeInnerLoopIncrement:
+	addl $1, %r13d					/*Inner: increment x aka col*/
+.LkaleidoscopeInnerLoopCheck:
+	cmp %r11d, %r13d				/*compare x to halfIndex*/
+	jge	.LkaleidoscopeOuterLoopIncrement		/*jump if r11 <= r13 (halfIndex <= x)*/
+	jmp .LkaleidoscopeUpdatePixel				/*else jump to updatePixel*/
+	
+.LkaleidoscopeExitLoop:
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
+	popq %rbx
+	popq %rbp
+	movq $1, %rax
+	ret
+
+.LkaleidoscopeFail:
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %r11
+	popq %r10
+	popq %rbx
+	popq %rbp
+	movq $0, %rax
 	ret
 
 	/* This avoids linker warning about executable stack */
