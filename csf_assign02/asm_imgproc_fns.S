@@ -845,26 +845,28 @@ imgproc_kaleidoscope:
 	imull %r12d, %r9d								/*actual width * yIndex*/
 	addl %r13d, %r9d								/*(actual width * yIndex) + xIndex*/
 
-	movq 8(%rdi), %rdx									/*value located at rsi+8 is the address to the array (address of array in r8)*/
+	movq 8(%rdi), %rdx									/*value located at rdi+8 is the address to the array (address of array in r8)*/
 	movl (%rdx,%r9,4), %r9d			    		/*(pixel) incrementing the address to the array to access element %r14*/
 
 	subq $32, %rsp										/*create room for int32_t buffer*/
+	movq %rsp, %rbp									/*buffer pointer*/
 	
 	movl $0, 0(%rsp)
-	movl $0, 1(%rsp)
-	movl $0, 2(%rsp)
-	movl $0, 3(%rsp)
 	movl $0, 4(%rsp)
-	movl $0, 5(%rsp)
-	movl $0, 6(%rsp)
-	movl $0, 7(%rsp)
+	movl $0, 8(%rsp)
+	movl $0, 12(%rsp)
+	movl $0, 16(%rsp)
+	movl $0, 20(%rsp)
+	movl $0, 24(%rsp)
+	movl $0, 28(%rsp)
 
 	pushq %rdi
 	pushq %rsi
 	pushq %rdx
 	pushq %rcx
 	pushq %rax
-	movq %rsp, %rdi							/*buffer into arg1*/
+	//leaq 40(%rsp), %rdi					/*buffer into arg1 (40 offset because of the saved registers)*/
+	movq %rbp, %rdi							/*buffer into arg1 (40 offset because of the saved registers)*/
 	movq %r15, %rsi							/*width into arg2*/
 	movq %r13, %rdx							/*xIndex into arg3*/
 	movq %r12, %rcx							/*yIndex into arg4*/
@@ -875,9 +877,37 @@ imgproc_kaleidoscope:
 	popq %rsi
 	popq %rdi
 
+	movq $0, %rdx
+	movq $0, %rcx
+	movq $0, %rax						/*i*/
+	jmp .LkaleidoscopeFillOutputImageLoopConditionCheck
+
+//this part is failing
+.LkaleidoscopeFillOutputImageLoop:
+	cmp $0, %r14										/*check if isOdd = 0 (ie even)*/
+	je .LkaleidoscopeFillOutputImage
+
+.LkaleidoscopeFillOutputImage:
+	pushq %rdx
+	pushq	%rcx
+
+	movq $0, %rdx
+	movq $0, %rcx
+	movl 0(%rbp, %rax, 4), %ecx					/*ecx = arrayIndex[i]*/
+
+	movq 8(%rsi), %rdx									/*(&output_img -> data)*/
+	leaq (%rdx,%rcx,4), %rdx			    	/*&(output_img -> data[arrayIndex[i]])*/
+	movl %r9d, (%rdx)		/*load into address stored in rdx ()*/ //this part is wrong
+
+	popq %rcx
+	popq %rdx
+
+.LkaleidoscopeFillOutputImageLoopIncrement:
+	addl $1, %eax 										/*index++*/
+.LkaleidoscopeFillOutputImageLoopConditionCheck:
+	cmp $8, %rax												/*8 > i*/
+	jl .LkaleidoscopeFillOutputImageLoop 								/*jump to loop if 8 > i*/
 	
-
-
 	addq $32, %rsp							/*remove buffer*/
 
 	jmp .LkaleidoscopeInnerLoopIncrement 		/*After one iteration check col (x)*/
