@@ -835,11 +835,50 @@ imgproc_kaleidoscope:
 	jmp .LkaleidoscopeOuterLoopCheck
 
 .LkaleidoscopeUpdatePixel:
-	cmp %r13d, %r12d													/*compare y vs x*/
-	jl .LkaleidoscopeInnerLoopIncrement        /*x < y*/
+	cmp %r13d, %r12d													/*compare x vs y*/
+	jg .LkaleidoscopeInnerLoopIncrement       /*x < y*/
 
-	movq 8(%rdi), %r9										/*value located at rsi+8 is the address to the array (address of array in r8)*/
-	movl (%r9,%r14,4), %r8d			    		/*(pixel) incrementing the address to the array to access element %r14*/
+	/*calcuate the index*/
+	movq $0, %r9
+
+	movq 4(%rdi), %r9				/*r9 = actualWidth*/
+	imull %r12d, %r9d								/*actual width * yIndex*/
+	addl %r13d, %r9d								/*(actual width * yIndex) + xIndex*/
+
+	movq 8(%rdi), %rdx									/*value located at rsi+8 is the address to the array (address of array in r8)*/
+	movl (%rdx,%r9,4), %r9d			    		/*(pixel) incrementing the address to the array to access element %r14*/
+
+	subq $32, %rsp										/*create room for int32_t buffer*/
+	
+	movl $0, 0(%rsp)
+	movl $0, 1(%rsp)
+	movl $0, 2(%rsp)
+	movl $0, 3(%rsp)
+	movl $0, 4(%rsp)
+	movl $0, 5(%rsp)
+	movl $0, 6(%rsp)
+	movl $0, 7(%rsp)
+
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rcx
+	pushq %rax
+	movq %rsp, %rdi							/*buffer into arg1*/
+	movq %r15, %rsi							/*width into arg2*/
+	movq %r13, %rdx							/*xIndex into arg3*/
+	movq %r12, %rcx							/*yIndex into arg4*/
+	call fillKaleidoscopeIndexArray
+	popq %rax
+	popq %rcx
+	popq %rdx
+	popq %rsi
+	popq %rdi
+
+	
+
+
+	addq $32, %rsp							/*remove buffer*/
 
 	jmp .LkaleidoscopeInnerLoopIncrement 		/*After one iteration check col (x)*/
 
