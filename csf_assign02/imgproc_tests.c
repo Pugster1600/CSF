@@ -674,8 +674,8 @@ void test_fade_basic( TestObjs *objs ) {
 void test_kaleidoscope_basic( TestObjs *objs ) {
   struct Picture sq_test_kaleidoscope_expected_pic = {
     TEST_COLORS,
-    12, // width
-    12, // height
+    13, // width
+    13, // height
     "rrrrrrrrrrrr"
     "rggggggggggr"
     "rgbbbbbbbbgr"

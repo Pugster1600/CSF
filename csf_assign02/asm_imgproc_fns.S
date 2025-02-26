@@ -789,7 +789,6 @@ imgproc_fade:
 	.globl imgproc_kaleidoscope
 imgproc_kaleidoscope:
 	/* TODO: implement */
-	/* TODO: implement */
 	pushq %rbp
 	pushq %rbx
 	pushq %r10
