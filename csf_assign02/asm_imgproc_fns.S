@@ -814,6 +814,7 @@ imgproc_kaleidoscope:
 
 	cmp $0, %r14										/*check if isOdd = 0 (ie even)*/
 	je .LkaleidoscopeEvenIndex
+	jmp .LkaleidoscopeExitLoop
 	addl $1, %r15d									/*increase the width if odd*/
 
 .LkaleidoscopeEvenIndex:
