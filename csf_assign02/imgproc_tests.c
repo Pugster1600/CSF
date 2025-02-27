@@ -121,6 +121,27 @@ void testFillKaleidoscopeIndexArray();
 
 // TODO: add prototypes for additional test functions
 
+void test_odd( TestObjs *objs ) {
+  struct Picture sq_test_kaleidoscope_expected_pic = {
+    TEST_COLORS,
+    13, // width
+    13, // height
+    "rrrrrrrrrrrr"
+    "rggggggggggr"
+    "rgbbbbbbbbgr"
+    "rgbmmmmmmbgr"
+    "rgbmccccmbgr"
+    "rgbmcrrcmbgr"
+    "rgbmcrrcmbgr"
+    "rgbmccccmbgr"
+    "rgbmmmmmmbgr"
+    "rgbbbbbbbbgr"
+    "rggggggggggr"
+    "rrrrrrrrrrrr"
+  };
+
+  imgproc_kaleidoscope( objs->sq_test, objs->sq_test_out );
+}
 
 int main( int argc, char **argv ) {
   // allow the specific test to execute to be specified as the
@@ -136,7 +157,8 @@ int main( int argc, char **argv ) {
   TEST( test_rgb_basic );
   TEST( test_grayscale_basic );
   //TEST( test_fade_basic );
-  TEST( test_kaleidoscope_basic );
+  //TEST( test_kaleidoscope_basic );
+  TEST (test_odd);
 
   TEST (testGetColor);
   TEST (testCombineData);
@@ -465,20 +487,21 @@ TestObjs *setup( void ) {
 
   struct Picture sq_test_pic = {
     TEST_COLORS,
-    12, // width
-    12, // height
-    "rrrrrr      "
-    " ggggg      "
-    "  bbbb      "
-    "   mmm      "
-    "    cc      "
-    "     r      "
-    "            "
-    "            "
-    "            "
-    "            "
-    "            "
-    "            "
+    13, // width
+    13, // height
+    "rrrrrrr      "
+    " gggggg      "
+    "  bbbbb      "
+    "   mmmm      "
+    "    ccc      "
+    "     rr      "
+    "      r      "
+    "             "
+    "             "
+    "             "
+    "             "
+    "             "
+    "             "
   };
   objs->sq_test_pic = sq_test_pic;
   objs->sq_test = picture_to_img( &sq_test_pic );

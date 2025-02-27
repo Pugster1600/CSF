@@ -814,12 +814,12 @@ imgproc_kaleidoscope:
 
 	cmp $0, %r14										/*check if isOdd = 0 (ie even)*/
 	je .LkaleidoscopeEvenIndex
-	jmp .LkaleidoscopeExitLoop
+	//jmp .LkaleidoscopeExitLoop		//NOTE: THIS WILL WILL SKIP ODD ONES
 	addl $1, %r15d									/*increase the width if odd*/
 
 .LkaleidoscopeEvenIndex:
 	movl $0, %r12d									/*r12 = (height) y index*/
-	movl $0, %r13d									/*r13 = (width) x index*/
+	movl $0, %r13d									/*r13 = (width) x index */
 
 	movq $0, %rdx            				/*get 64 bit result*/
 	movq %r15, %rax					 				/*height into rax*/
@@ -830,7 +830,7 @@ imgproc_kaleidoscope:
 
 	movq %r15, %r10									/*move width index into r10*/
 	subq $1, %r10										/*width index - 1*/
-	imulq %r15, %r10										/*width index * (width index - 1)*/ 
+	imulq %r15, %r10								/*width index * (width index - 1)*/ 
 
 	jmp .LkaleidoscopeOuterLoopCheck
 
@@ -841,7 +841,7 @@ imgproc_kaleidoscope:
 	/*calcuate the index*/
 	movq $0, %r9
 
-	movq 4(%rdi), %r9				/*r9 = actualWidth*/
+	movq 4(%rdi), %r9								/*r9 = actualWidth*/
 	imull %r12d, %r9d								/*actual width * yIndex*/
 	addl %r13d, %r9d								/*(actual width * yIndex) + xIndex*/
 
@@ -865,7 +865,7 @@ imgproc_kaleidoscope:
 	pushq %rdx
 	pushq %rcx
 	pushq %rax
-	//leaq 40(%rsp), %rdi					/*buffer into arg1 (40 offset because of the saved registers)*/
+	//leaq 40(%rsp), %rdi				/*buffer into arg1 (40 offset because of the saved registers)*/
 	movq %rbp, %rdi							/*buffer into arg1 (40 offset because of the saved registers)*/
 	movq %r15, %rsi							/*width into arg2*/
 	movq %r13, %rdx							/*xIndex into arg3*/
@@ -882,25 +882,55 @@ imgproc_kaleidoscope:
 	movq $0, %rax						/*i*/
 	jmp .LkaleidoscopeFillOutputImageLoopConditionCheck
 
-//this part is failing
 .LkaleidoscopeFillOutputImageLoop:
-	cmp $0, %r14										/*check if isOdd = 0 (ie even)*/
-	je .LkaleidoscopeFillOutputImage
-
-.LkaleidoscopeFillOutputImage:
-	pushq %rdx
-	pushq	%rcx
-
+	//idk where to pushq and popq
+	//pushq %rdx
+	//pushq	%rcx
 	movq $0, %rdx
 	movq $0, %rcx
 	movl 0(%rbp, %rax, 4), %ecx					/*ecx = arrayIndex[i]*/
 
+	cmp $1, %r14										/*check if isOdd == 1*/
+	jne .LkaleidoscopeFillOutputImage		/*continue if even*/
+
+	cmp %r10d, %ecx		/*extraRowStartIndex <= index*/
+	jge .LkaleidoscopeFillOutputImageLoopIncrement
+
+	pushq %rax							/*save the iteration index value (0-7)*/
+	movl %ecx, %eax					/*index into r8*/
+	addl $1, %eax						/*index + 1*/
+	divl %r15d              /*index + 1 / indexingWidth*/
+	popq %rax
+	cmp $0, %edx						/*index + 1 % indexingWidth == 0*/
+	je .LkaleidoscopeFillOutputImageLoopIncrement
+
+	pushq %rdi
+	pushq %rsi
+	pushq %rdx
+	pushq %rax
+
+	movq 4(%rdi), %rdx  					/*actualWidth into arg3*/ 
+	movq %r15, %rsi 					/*indexingWidth into arg2*/
+	movq %rcx, %rdi 					/*index into arg1*/
+	
+	call getAdjustedIndex
+
+	movq %rax, %rcx						/*move adjusted index into index*/
+
+	popq %rax
+	popq %rdx
+	popq %rsi
+	popq %rdi
+	
+
+.LkaleidoscopeFillOutputImage:
 	movq 8(%rsi), %rdx									/*(&output_img -> data)*/
 	leaq (%rdx,%rcx,4), %rdx			    	/*&(output_img -> data[arrayIndex[i]])*/
 	movl %r9d, (%rdx)		/*load into address stored in rdx ()*/ //this part is wrong
 
-	popq %rcx
-	popq %rdx
+	//popq %rcx
+	//popq %rdx
+	//jmp .LkaleidoscopeFillOutputImageLoopIncrement
 
 .LkaleidoscopeFillOutputImageLoopIncrement:
 	addl $1, %eax 										/*index++*/
@@ -911,6 +941,7 @@ imgproc_kaleidoscope:
 	addq $32, %rsp							/*remove buffer*/
 
 	jmp .LkaleidoscopeInnerLoopIncrement 		/*After one iteration check col (x)*/
+
 
 .LkaleidoscopeOuterLoopIncrement:
 	addl $1, %r12d			    /*Outer: increment y aka row*/
