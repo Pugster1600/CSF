@@ -787,12 +787,36 @@ imgproc_fade:
  * Returns:
  *   1 if successful, 0 if the transformation fails because the
  *   width and height of input_img are not the same.
+ *
+ * Stack Memory:
+ *
+ * -8(%rbp) - %rbp - used to create the buffer for fillKaleidoscopeIndexArray
+ * -16(%rbp) - %r10 - used to store extraRowStartIndex ie the extra row in the extended grid
+ * -24(%rbp) - %r11 - used to store halfIndex
+ * -32(%rbp) - %r12 - used to store y index
+ * -40(%rbp) - %r13 - used to store x index
+ * -48(%rbp) - %r14 - used to store isOdd
+ * -56(%rbp) - %r15 - used to store indexingWidth == indexingHeight
+ * -88(%rbp) - used to store the index buffer
+ * -96(%rbp) - %rdi	- saved for function call for fillKaleidoscopeIndexArray and/or getAdjustedIndex
+ * -104(%rbp) - %rsi - saved for function call for fillKaleidoscopeIndexArray and/or getAdjustedIndex
+ * -112(%rbp) - %rdx - saved for function call for fillKaleidoscopeIndexArray and/or getAdjustedIndex
+ * -120(%rbp) - %rcx - saved for function call for fillKaleidoscopeIndexArray and/or getAdjustedIndex
+ * -128(%rbp) - %rax - saved for function call for fillKaleidoscopeIndexArray and/or getAdjustedIndex
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
+ *
  */
 	.globl imgproc_kaleidoscope
 imgproc_kaleidoscope:
 	/*save callee registers*/
 	pushq %rbp
-	pushq %rbx
 	pushq %r10
 	pushq %r11
 	pushq %r12
@@ -952,7 +976,6 @@ imgproc_kaleidoscope:
 	popq %r12
 	popq %r11
 	popq %r10
-	popq %rbx
 	popq %rbp
 	movq $1, %rax
 	ret
@@ -964,7 +987,6 @@ imgproc_kaleidoscope:
 	popq %r12
 	popq %r11
 	popq %r10
-	popq %rbx
 	popq %rbp
 	movq $0, %rax
 	ret
