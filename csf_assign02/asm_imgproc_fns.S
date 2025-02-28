@@ -745,6 +745,116 @@ imgproc_grayscale:
 	.globl imgproc_fade
 imgproc_fade:
 	/* TODO: implement */
+	pushq %rbx
+	pushq %r12
+	pushq %r13
+	pushq %r14
+	pushq %r15
+	pushq %rbp
+    
+    /* Load width and height from struct */
+	movl (%rdi), %r15d       /* width in r15d */
+	movl 4(%rdi), %r14d      /* height in r14d */
+	movq 8(%rdi), %r8        /* input buffer address in r8 */
+	movq 8(%rsi), %r9        /* output buffer address in r9 */
+
+	xorl %r12d, %r12d        /* y index in r12d */
+	xorl %r13d, %r13d        /* x index in r13d */
+
+.LfadeOuterLoop:
+	cmpl %r14d, %r12d
+	jge .LfadeExit
+
+.LfadeInnerLoop:
+	cmpl %r15d, %r13d
+	jge .LfadeNextRow
+    
+    /* Calculate pixel offset: y * width + x */
+	movl %r12d, %eax
+	imull %r15d, %eax
+	addl %r13d, %eax
+	movl (%r8, %rax, 4), %ebx  /* Load pixel into ebx */
+    
+    /* Save pixel into extra register */
+	movl %ebx, %ebp
+    
+    /*  get red pixel */
+	movl %ebx, %edi
+	call get_r
+    
+    /* Set up arguments for getFadedComponentValue */
+	movl %eax, %r10d         /* Save red value */
+	movl %r12d, %edi         /* rowIndex */
+	movl %r13d, %esi         /* colIndex */
+	movl %r15d, %edx         /* width */
+	movl %r14d, %ecx         /* height */
+	movl %r10d, %r8d         /* color */
+    
+	call getFadedComponentValue
+	movl %eax, %r10d         /* save newRed */
+    
+    /* get green pixel */
+	movl %ebp, %edi          /* put original pixel back into edi for get_g */
+	call get_g
+	/* set up arguments */
+	movl %eax, %r11d         /* Save green value */
+	movl %r12d, %edi         /* rowIndex */
+	movl %r13d, %esi         /* colIndex */
+	movl %r15d, %edx         /* width */
+	movl %r14d, %ecx         /* height */
+	movl %r11d, %r8d         /* color */
+    
+	call getFadedComponentValue
+	movl %eax, %r11d         /* save newGreen */
+    
+	/* Process Blue */
+	movl %ebp, %edi          /* Restore pixel from saved register */
+	call get_b
+    
+    /* Save blue value and call getFadedComponentValue */
+	movl %eax, %ebp          /* Use ebp temporarily for savving blue */
+	movl %r12d, %edi         /* rowIndex */
+	movl %r13d, %esi         /* colIndex */
+	movl %r15d, %edx         /* width */
+	movl %r14d, %ecx         /* height */
+	movl %ebp, %r8d          /* color */
+    
+	call getFadedComponentValue
+	movl %eax, %ebp          /* save newBlue temporarily */
+    
+	/* Get alpha  */
+	movl %ebx, %edi          /* original pixel for alpha */
+	call get_a
+	/* set up arguments for combinedata */
+	movl %eax, %ecx          /* alpha to ecx */
+	movl %r10d, %edi         /* newRed */
+	movl %r11d, %esi         /* newGreen */
+	movl %ebp, %edx          /* newBlue from ebp */
+    
+	call combineData
+    
+    /* Store result in new pixel (r9 is output) */
+	movl %r12d, %ecx
+	imull %r15d, %ecx
+	addl %r13d, %ecx
+	movl %eax, (%r9, %rcx, 4)
+    
+	/* Increment x and jump to loop again */
+	incl %r13d
+	jmp .LfadeInnerLoop
+
+.LfadeNextRow:
+	xorl %r13d, %r13d
+	incl %r12d
+	jmp .LfadeOuterLoop
+
+.LfadeExit:
+	popq %rbp
+	popq %r15
+	popq %r14
+	popq %r13
+	popq %r12
+	popq %rbx
 	ret
 
 /*
