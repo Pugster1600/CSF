@@ -739,8 +739,15 @@ imgproc_grayscale:
  * This transformation always succeeds.
  *
  * Parameters:
- *   %rdi - pointer to the input Image
- *   %rsi - pointer to the output Image
+ * %rdi - pointer to the input Image
+	* %rsi - pointer to the output image buffer                                                                                                                                                
+ * Stack memory:
+ * -8(%rbp) - %rbx - used for holding pixel address during loop  
+ * -16(%rbp) - %r12 - rowIndex -> preserved between loops
+ * -24(%rbp) - %r13 - colIndex -> preserved between loops                                                                                                                        
+ * -32(%rbp) - %r14 - height -> holds the height of image                                                                                                                       
+ * -40(%rbp) - %r15 - width -> preserved to keep arguments                                                                                                          
+ * -48(%rbp) - %rbp - pixel storage -> used to hold pixel
  */
 	.globl imgproc_fade
 imgproc_fade:
