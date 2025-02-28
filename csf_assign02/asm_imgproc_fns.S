@@ -781,7 +781,8 @@ imgproc_fade:
     /*  get red pixel */
 	movl %ebx, %edi
 	call get_r
-    
+
+	pushq %r8
     /* Set up arguments for getFadedComponentValue */
 	movl %eax, %r10d         /* Save red value */
 	movl %r12d, %edi         /* rowIndex */
@@ -791,11 +792,14 @@ imgproc_fade:
 	movl %r10d, %r8d         /* color */
     
 	call getFadedComponentValue
+	popq %r8
 	movl %eax, %r10d         /* save newRed */
     
     /* get green pixel */
 	movl %ebp, %edi          /* put original pixel back into edi for get_g */
 	call get_g
+
+	pushq %r8
 	/* set up arguments */
 	movl %eax, %r11d         /* Save green value */
 	movl %r12d, %edi         /* rowIndex */
@@ -806,11 +810,12 @@ imgproc_fade:
     
 	call getFadedComponentValue
 	movl %eax, %r11d         /* save newGreen */
-    
+	popq %r8
+	
 	/* Process Blue */
 	movl %ebp, %edi          /* Restore pixel from saved register */
 	call get_b
-    
+	pushq %r8
     /* Save blue value and call getFadedComponentValue */
 	movl %eax, %ebp          /* Use ebp temporarily for savving blue */
 	movl %r12d, %edi         /* rowIndex */
@@ -821,7 +826,7 @@ imgproc_fade:
     
 	call getFadedComponentValue
 	movl %eax, %ebp          /* save newBlue temporarily */
-    
+	popq %r8
 	/* Get alpha  */
 	movl %ebx, %edi          /* original pixel for alpha */
 	call get_a
