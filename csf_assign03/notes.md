@@ -123,3 +123,14 @@ totalSets = 1
 sizePerBlock = how much data a single cache line can hold
 
 tag, index, offset
+
+iterators are basically wrappers for the actual value returned
+> they have fields with the actual value 
+> it allows us to read it only but not actually write it
+> or any other restrictions that the iterators have
+
+default construcotr is the one wiht no arguents
+> this is auto invoked when declared something but not directly initaliziing it like in a malloc call
+
+ std::map<int, std::string>::iterator it;
+ > means that iterator objects is part of the map scope
