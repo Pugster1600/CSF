@@ -22,6 +22,14 @@ csim : $(OBJS)
 solution.zip :
 	zip -9r $@ $(FILES_TO_SUBMIT)
 
+test : csim
+	./csim 256 4 16 write-allocate write-back fifo < gcc.trace
+
+gdb : csim
+	gdb ./csim
+#set args ./csim 256 4 16 write-allocate write-back fifo
+#run < gcc.trace
+
 # Generate header file dependencies
 depend :
 	$(CXX) $(CXXFLAGS) -M $(SRCS) > depend.mak
@@ -31,5 +39,4 @@ depend.mak :
 
 clean :
 	rm -f csim *.o
-
 include depend.mak
