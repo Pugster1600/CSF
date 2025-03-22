@@ -3,5 +3,6 @@
 int main( int argc, char **argv ) {
   // TODO: implement
 
+  std::cout << "Hello World" << std::endl;
   return 0;
 }
