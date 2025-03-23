@@ -134,3 +134,16 @@ default construcotr is the one wiht no arguents
 
  std::map<int, std::string>::iterator it;
  > means that iterator objects is part of the map scope
+
+ maps are ordered
+
+cache read policy
+> cache hit 
+> cache miss no eviction
+> chache hit eviction
+
+cache write policy
+> 
+
+bool Cache::matchedTag(std::vector<CacheBlock> &cache, uint32_t tag) const
+const at the end means we are not modifying any of the params

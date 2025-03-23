@@ -9,6 +9,13 @@
 #include <map>
 #include <sstream>
 
+typedef struct CacheBlock{
+  uint32_t tag = 0;
+  uint32_t timer = 0;
+} CacheBlock;
+
+//NOTE: we dont need to track what values are in set becuase by definition it is derived from the totalSets ie 8 bits thus we can have max 256 anyways
+//same with offset
 class Cache{
   public:
     Cache(uint32_t _totalSets, uint32_t _kAssociativity, uint32_t _sizePerBlock, std::string _writeMissPolicy, std::string _writeHitPolicy, std::string _evictionPolicy);
@@ -17,7 +24,9 @@ class Cache{
 
   private:
     //line/set/block# (uint32_t): tag (array of tags = kAssociativity) : timer (either fifo or lru)
-    std::map<uint32_t, std::vector<uint32_t>> cacheDataStructure; //fully associative has 1 key aka 1 set, direct mapping has vector size = 1
+    //#keys = sets, #arraySlots = #kAssociativity
+    //std::map<uint32_t, std::vector<uint32_t>> cacheDataStructure; //fully associative has 1 key aka 1 set, direct mapping has vector size = 1
+    std::map<uint32_t, std::vector<CacheBlock>> cacheDataStructure;
     uint32_t totalSets;
     uint32_t kAssociativity;
     uint32_t sizePerBlock;
@@ -28,11 +37,38 @@ class Cache{
     uint32_t totalTagBits;
     uint32_t totalOffsetBits;
 
+    uint32_t totalLoads = 0;
+    uint32_t totalStores = 0;
+    uint32_t loadHits = 0;
+    uint32_t loadMisses = 0;
+    uint32_t storeHits = 0;
+    uint32_t totalCycles = 0;
+
     std::string readNextLine();
+
+    void cacheLoadHit();
+
+    void cacheLoadMiss();
+
+    void cacheStoreHit();
+
+    void cacheStoreMiss();
+
+    void updateTimer(std::vector<CacheBlock> &cache, uint32_t tag);
+
+    void updateFIFO(std::vector<CacheBlock> &cache);
+    
+    void updateLRU(std::vector<CacheBlock> &cache, uint32_t tag);
+
+    uint32_t getEvictedIndex(std::vector<CacheBlock> &cache);
+
+    void evictAndUpdateBlock(std::vector<CacheBlock> &cache, uint32_t index, uint32_t tag);
 
     void loadData(uint32_t address); //cache read policy (read from RAM if miss)
 
     void storeData(uint32_t address); //cache write policy (store to RAM if miss)
+
+    bool matchedTag(std::vector<CacheBlock> &cache, uint32_t tag) const;
 
     uint32_t calculateTotalSetBits(uint32_t totalSets);
     
