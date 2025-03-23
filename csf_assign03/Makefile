@@ -28,9 +28,8 @@ test : csim
 
 gdb : csim
 	gdb ./csim
-#set args ./csim 256 4 16 write-allocate write-back fifo
-#run < gcc.trace
 
+#set args 256 4 16 write-allocate write-back fifo < gcc.trace
 # Generate header file dependencies
 depend :
 	$(CXX) $(CXXFLAGS) -M $(SRCS) > depend.mak

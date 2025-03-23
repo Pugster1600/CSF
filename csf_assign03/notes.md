@@ -147,3 +147,21 @@ cache write policy
 
 bool Cache::matchedTag(std::vector<CacheBlock> &cache, uint32_t tag) const
 const at the end means we are not modifying any of the params
+
+Yes, that's correct! When you dereference an iterator and modify the value, the changes are directly reflected in the underlying data structure. This is because the iterator points to the actual elements in the container, and dereferencing the iterator gives you a reference to the element in the container.
+
+In other words, iterators provide a way to access and modify the elements of a container. If the container holds objects or values, modifying them through the iterator modifies the original container.
+
+for storing, this means that we are modifying the data
+> so if me store the data, 
+
+if (this -> cacheDataStructure.size() > totalSets) {
+    return; 
+  }
+this will never happen because the totalSets = 2^set bits
+> which we derived from set bits to begin with!
+
+for write-miss, if we write-miss it with write-allocate ie we bring it to cache, that means if we load the same block later, still cache hit!
+> thus storing affects loading values based on the write-miss policy indirectly (meaning write-miss should not increase load count but could indirectly if we load same block later)
+
+but if a dirty block gets evicted, we only store once even if the value of it changes multiple times

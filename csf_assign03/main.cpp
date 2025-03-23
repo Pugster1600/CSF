@@ -65,3 +65,5 @@ int main( int argc, char **argv ) {
 
   return 0;
 }
+
+//scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign03/solution.zip .

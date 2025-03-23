@@ -6,15 +6,15 @@ Cache::Cache(uint32_t _totalSets, uint32_t _kAssociativity, uint32_t _sizePerBlo
   this -> totalTagBits = Cache::calculateTotalTagBits(this -> totalSets, this -> sizePerBlock);
   this -> totalOffsetBits = Cache::calculateTotalOffsetBits(this -> sizePerBlock);
 
-  std::cout << "totalSets: " << totalSets << std::endl;
-  std::cout << "kAssociativity: " << kAssociativity << std::endl;
-  std::cout << "sizePerBlock: " << sizePerBlock << std::endl;
-  std::cout << "writeMissPolicy: " << writeMissPolicy << std::endl;
-  std::cout << "writeHitPolicy: " << writeHitPolicy << std::endl;
-  std::cout << "evictionPolicy: " << evictionPolicy << std::endl;
-  std::cout << "totalSetBits: " << totalSetBits << std::endl;
-  std::cout << "totalTagBits: " << totalTagBits << std::endl;
-  std::cout << "totalOffsetBits: " << totalOffsetBits << std::endl;
+  //std::cout << "totalSets: " << totalSets << std::endl;
+  //std::cout << "kAssociativity: " << kAssociativity << std::endl;
+  //std::cout << "sizePerBlock: " << sizePerBlock << std::endl;
+  //std::cout << "writeMissPolicy: " << writeMissPolicy << std::endl;
+  //std::cout << "writeHitPolicy: " << writeHitPolicy << std::endl;
+  //std::cout << "evictionPolicy: " << evictionPolicy << std::endl;
+  //std::cout << "totalSetBits: " << totalSetBits << std::endl;
+  //std::cout << "totalTagBits: " << totalTagBits << std::endl;
+  //std::cout << "totalOffsetBits: " << totalOffsetBits << std::endl;
 }
 
 bool Cache::matchedTag(std::vector<CacheBlock> &cache, uint32_t tag) const{
@@ -36,9 +36,10 @@ void Cache::cacheLoadHit(){
 void Cache::cacheLoadMiss(){
   this -> totalLoads++;
   this -> loadMisses++;
+  this -> totalCycles+= 100;
 }
 
-void Cache::loadData(uint32_t address){ //RAM -> cache
+void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
   uint32_t tag = getTagValue(this -> totalTagBits, address);
   uint32_t offset = getOffsetValue(this -> totalOffsetBits, address);
   uint32_t setValue = getSetValue(this -> totalSetBits, this -> totalOffsetBits, address); //even if setBits = 0 ie directMapping, still works becuase array[0]
@@ -56,28 +57,65 @@ void Cache::loadData(uint32_t address){ //RAM -> cache
         CacheBlock newBlock;
         newBlock.tag = tag;
         (it -> second).push_back(newBlock);
+        cacheLoadMiss();
       }
     }
     updateTimer(it -> second, tag);
   } else { //2.2 cache miss no eviction, new set
     CacheBlock newBlock;
     newBlock.tag = tag;
-    this -> cacheDataStructure[setValue].push_back(newBlock);
-    updateTimer(it -> second, tag);
+    (this -> cacheDataStructure).emplace(setValue, std::vector<CacheBlock>{newBlock});
+    updateTimer(this->cacheDataStructure[setValue], tag);
+    cacheLoadMiss();
   }
 }
 
 void Cache::cacheStoreHit(){
+  this -> totalStores++;
+  this -> storeHits++;
+  this -> totalCycles++;
 
+  this -> totalLoads++;
+  this -> loadHits++;
 }
 
 void Cache::cacheStoreMiss(){
+  this -> totalStores++;
+  this -> storeMisses++;
+  this -> totalCycles+=100;
 
+  this -> totalLoads++;
+  this -> loadMisses++;
 }
 
-void Cache::storeData(uint32_t address){ //cache -> RAM
-  if (this -> cacheDataStructure.size() > totalSets) {
-    return; 
+void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
+  uint32_t tag = getTagValue(this -> totalTagBits, address);
+  uint32_t offset = getOffsetValue(this -> totalOffsetBits, address);
+  uint32_t setValue = getSetValue(this -> totalSetBits, this -> totalOffsetBits, address); //even if setBits = 0 ie directMapping, still works becuase array[0]
+
+  std::map<uint32_t, std::vector<CacheBlock>>::iterator it = this -> cacheDataStructure.find(setValue);
+  if (it != cacheDataStructure.end()) { //set in map
+    if (matchedTag(it -> second, tag)){ //1. cache hit
+      cacheLoadHit();
+    } else { //cache miss
+      if (this -> cacheDataStructure[setValue].size() >= this -> kAssociativity) { //2.1 cache miss eviction
+        uint32_t index = getEvictedIndex(it -> second);
+        evictAndUpdateBlock(it -> second, index, tag);
+        cacheLoadMiss();
+      } else { //3. cache miss no eviction, no new set
+        CacheBlock newBlock;
+        newBlock.tag = tag;
+        (it -> second).push_back(newBlock);
+        cacheLoadMiss();
+      }
+    }
+    updateTimer(it -> second, tag);
+  } else { //2.2 cache miss no eviction, new set
+    CacheBlock newBlock;
+    newBlock.tag = tag;
+    (this -> cacheDataStructure).emplace(setValue, std::vector<CacheBlock>{newBlock});
+    updateTimer(this->cacheDataStructure[setValue], tag);
+    cacheLoadMiss();
   }
 }
 
@@ -88,10 +126,11 @@ void Cache::updateTimer(std::vector<CacheBlock> &cache, uint32_t tag){
     updateLRU(cache, tag);
   }
 }
+
 //to update fifo or lru
 void Cache::updateFIFO(std::vector<CacheBlock> &cache){
   for (std::vector<CacheBlock>::iterator it = cache.begin(); it != cache.end(); it++){
-    it -> timer++;
+    (it -> timer)++;
   }
 }
 
@@ -117,7 +156,14 @@ uint32_t Cache::getEvictedIndex(std::vector<CacheBlock> &cache){
 }
 
 void Cache::evictAndUpdateBlock(std::vector<CacheBlock> &cache, uint32_t index, uint32_t tag){
-  cache.erase(cache.begin() + index);
+  cache[index].tag = tag;
+  if (cache[index].dirty){
+    
+  }
+  cache[index].dirty = false;
+  cache[index].timer = 0;
+
+  //cache.erase(cache.begin() + index);
 }
 
 void Cache::mainLoop(){
@@ -134,11 +180,25 @@ void Cache::mainLoop(){
     stream >> hex;
     stream >> extra;
     
-    std:: cout << operation << " " << hex << " " << extra << std::endl;
+    //std:: cout << operation << " " << hex << " " << extra << std::endl;
 
+    uint32_t address = hexToUL(hex);
+    if (operation == "l"){
+      loadData(address);
+    } else if (operation == "s"){
+      this -> totalStores++;
+    }
     line = Cache::readNextLine();
     stream = std::istringstream(line);
   }
+
+  std::cout << "Total loads: " << this -> totalLoads << std::endl;
+  std::cout << "Total stores: " << this -> totalStores << std::endl;
+  std::cout << "Load hits: " << this -> loadHits << std::endl;
+  std::cout << "Load misses: " << this -> loadMisses << std::endl;
+  std::cout << "Store hits: " << this -> storeHits << std::endl;
+  std::cout << "Store misses: " << this -> storeMisses << std::endl;
+  std::cout << "Total cycles: " << this -> totalCycles << std::endl;
 }
 
 std::string Cache::readNextLine(){
