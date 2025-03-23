@@ -26,10 +26,22 @@ solution.zip :
 test : csim
 	./csim 256 4 16 write-allocate write-back fifo < gcc.trace
 
+sanity: csim
+	./csim 1 1 4 write-allocate write-back fifo < test.trace
+associative: csim
+	./csim 1 256 16 write-allocate write-back fifo < test.trace
+
+set: csim
+	./csim 256 4 16 write-allocate write-back fifo < test.trace
+
+direct: csim
+	./csim 256 1 16 write-allocate write-back fifo < test.trace
+
 gdb : csim
 	gdb ./csim
 
 #set args 256 4 16 write-allocate write-back fifo < gcc.trace
+#set args 1 1 4 write-allocate write-back fifo < test.trace
 # Generate header file dependencies
 depend :
 	$(CXX) $(CXXFLAGS) -M $(SRCS) > depend.mak

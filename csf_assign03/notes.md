@@ -165,3 +165,12 @@ for write-miss, if we write-miss it with write-allocate ie we bring it to cache,
 > thus storing affects loading values based on the write-miss policy indirectly (meaning write-miss should not increase load count but could indirectly if we load same block later)
 
 but if a dirty block gets evicted, we only store once even if the value of it changes multiple times
+
+associative: csim
+	./csim 1 256 16 write-allocate write-back fifo < test.trace
+
+set: csim
+	./csim 256 4 16 write-allocate write-back fifo < test.trace
+
+direct: csim
+	./csim 256 1 16 write-allocate write-back fifo < test.trace

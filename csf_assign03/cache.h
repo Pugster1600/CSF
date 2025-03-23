@@ -50,26 +50,25 @@ class Cache{
 
     std::string readNextLine();
 
+    void createNewSet(uint32_t tag, uint32_t setValue);
     void loadData(uint32_t address); //cache read policy (read from RAM if miss)
-    void cacheLoadHit();
-    void cacheLoadMiss();
+    void cacheLoadHitUpdateStats();
+    void cacheLoadMissUpdateStats();
 
     void storeData(uint32_t address); //cache write policy (store to RAM if miss)
-    void cacheStoreHit();
-    void cacheStoreMiss();
-    void noWriteAllocate();
-    void writeAllocate();
-    void writeThrough(); //cache write hit -> always update in RAM and cache
-    void writeBack(); //cache write hit -> update just in cache, mark as dirty then when evicted write back
+    void cacheStoreHitUpdateStats();
+    void cacheStoreMissUpdateStats();
+    //void cacheWriteMiss(std::vector<CacheBlock> &set, uint32_t setValue, uint32_t tag);
+    uint32_t getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag);
 
-    void updateTimer(std::vector<CacheBlock> &cache, uint32_t tag);
-    void updateFIFO(std::vector<CacheBlock> &cache);
-    void updateLRU(std::vector<CacheBlock> &cache, uint32_t tag);
+    void updateTimer(std::vector<CacheBlock> &set, uint32_t tag);
+    void updateFIFO(std::vector<CacheBlock> &set);
+    void updateLRU(std::vector<CacheBlock> &set, uint32_t tag);
 
-    uint32_t getEvictedIndex(std::vector<CacheBlock> &cache);
-    void evictAndUpdateBlock(std::vector<CacheBlock> &cache, uint32_t index, uint32_t tag);
+    uint32_t getEvictedIndex(std::vector<CacheBlock> &set);
+    void evictAndUpdateBlock(std::vector<CacheBlock> &set, uint32_t index, uint32_t tag);
 
-    bool matchedTag(std::vector<CacheBlock> &cache, uint32_t tag) const;
+    bool matchedTag(std::vector<CacheBlock> &set, uint32_t tag);
 
     uint32_t calculateTotalSetBits(uint32_t totalSets);
     uint32_t calculateTotalOffsetBits(uint32_t sizePerBlock);
