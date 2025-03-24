@@ -137,37 +137,28 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
   uint32_t setValue = getSetValue(this -> totalSetBits, this -> totalOffsetBits, address); //even if setBits = 0 ie directMapping, still works becuase array[0]
 
   std::map<uint32_t, std::vector<CacheBlock>>::iterator it = this -> cacheDataStructure.find(setValue);
-  if (it != cacheDataStructure.end()) {
-    if (matchedTag(it -> second, tag) && this -> writeHitPolicy == "write-back"){ //1. cache write hit, write back (tag in set) -> only write back has dirty 
-      updateTimerStore(this->cacheDataStructure[setValue], tag);
-      uint32_t index = getIndexOfBlock(it -> second, tag);
-      it->second[index].dirty = true;
-      cacheStoreHitUpdateStats();
-    } else if (matchedTag(it -> second, tag) && this -> writeHitPolicy == "write-through") { //2. cache write hit, write through
-      updateTimerStore(this->cacheDataStructure[setValue], tag);
-      uint32_t index = getIndexOfBlock(it -> second, tag);
-      cacheStoreHitUpdateStats();
-    } else if (this -> writeMissPolicy == "write-allocate" && this -> cacheDataStructure[setValue].size() == this -> kAssociativity){ //3. cache write miss, write-allocate, eviction
-      updateTimerStore(this->cacheDataStructure[setValue], tag);
-      uint32_t index = getLargestValidLineIndex(it -> second);
-      evictAndUpdateBlock(it -> second, index, tag);
-      cacheStoreMissUpdateStats(); 
-    } else if (this -> writeMissPolicy == "write-allocate") { //4. cache write miss, write-allocate, insert (set exists)
-      updateTimerStore(this->cacheDataStructure[setValue], tag);
-      CacheBlock newBlock;
-      newBlock.tag = tag;
-      (it -> second).push_back(newBlock);
-      cacheStoreMissUpdateStats();
-    } else if (this -> writeMissPolicy == "no-write-allocate") { //5. cache write miss, no-write allocate (set exists)
-      updateTimerStore(this->cacheDataStructure[setValue], tag);
-      cacheStoreMissUpdateStats();
-    }
-  } else if (this -> writeMissPolicy == "no-write-allocate") { //6. cache write miss, no-write allocate (set does not exist)
+  if (matchedTag(it -> second, tag) && this -> writeHitPolicy == "write-back"){ //1. cache write hit, write back (tag in set) -> only write back has dirty 
+    updateTimerStore(this->cacheDataStructure[setValue], tag); //if lru, do the lru update policy, if fifo dont do anything
+    uint32_t index = getIndexOfBlock(it -> second, tag);
+    it->second[index].dirty = true;
+    cacheStoreHitUpdateStats();
+  } else if (matchedTag(it -> second, tag) && this -> writeHitPolicy == "write-through") { //2. cache write hit, write through
+    updateTimerStore(this->cacheDataStructure[setValue], tag); //if lru, do the lru update policy, if fifo dont do anything
+    uint32_t index = getIndexOfBlock(it -> second, tag);
+    cacheStoreHitUpdateStats();
+  } else if (this -> writeMissPolicy == "write-allocate" && this -> cacheDataStructure[setValue].size() == this -> kAssociativity){ //3. cache write miss, write-allocate, eviction
     updateTimerStore(this->cacheDataStructure[setValue], tag);
+    uint32_t index = getLargestValidLineIndex(it -> second); //if lru, do the lru update policy, if fifo update fifo
+    evictAndUpdateBlock(it -> second, index, tag);
+    cacheStoreMissUpdateStats(); 
+  } else if (this -> writeMissPolicy == "write-allocate") { //4. cache write miss, write-allocate, insert (set exists)
+    updateTimerStore(this->cacheDataStructure[setValue], tag); //if lru, do the lru update policy, if fifo update fifo
+    CacheBlock newBlock;
+    newBlock.tag = tag;
+    (it -> second).push_back(newBlock);
     cacheStoreMissUpdateStats();
-  } else if (this -> writeMissPolicy == "write-allocate") { //7. cache write miss, write-allocate (set does not exist)
-    updateTimerStore(this->cacheDataStructure[setValue], tag);
-    //createNewSet(tag, setValue);
+  } else if (this -> writeMissPolicy == "no-write-allocate") { //5. cache write miss, no-write allocate (set exists)
+    updateTimerStore(this->cacheDataStructure[setValue], tag); //if lru, do the lru update policy, if fifo dont do anything
     cacheStoreMissUpdateStats();
   }
 }
