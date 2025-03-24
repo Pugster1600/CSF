@@ -11,8 +11,11 @@
 
 typedef struct CacheBlock{
   uint32_t tag = 0;
-  uint32_t timer = 0;
+  uint32_t load_ts = 0;
+  uint32_t access_ts = 0;
   bool dirty = false;
+  bool valid = false;
+  //uint32_t timer = 0;
 } CacheBlock;
 
 //NOTE: we dont need to track what values are in set becuase by definition it is derived from the totalSets ie 8 bits thus we can have max 256 anyways
@@ -50,22 +53,29 @@ class Cache{
 
     std::string readNextLine();
 
-    void createNewSet(uint32_t tag, uint32_t setValue);
     void loadData(uint32_t address); //cache read policy (read from RAM if miss)
     void cacheLoadHitUpdateStats();
     void cacheLoadMissUpdateStats();
+    void cacheReadHit(std::vector<CacheBlock> &set, uint32_t tag);
+    void cacheReadMissEviction(std::vector<CacheBlock> &set, uint32_t tag);
+    void cacheReadMissInsert(std::vector<CacheBlock> &set, uint32_t tag);
 
     void storeData(uint32_t address); //cache write policy (store to RAM if miss)
     void cacheStoreHitUpdateStats();
     void cacheStoreMissUpdateStats();
-    //void cacheWriteMiss(std::vector<CacheBlock> &set, uint32_t setValue, uint32_t tag);
     uint32_t getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag);
 
-    void updateTimer(std::vector<CacheBlock> &set, uint32_t tag);
-    void updateFIFO(std::vector<CacheBlock> &set);
-    void updateLRU(std::vector<CacheBlock> &set, uint32_t tag);
+    uint32_t getIndexFromTimer(std::vector<CacheBlock> &set, uint32_t timer);
 
-    uint32_t getEvictedIndex(std::vector<CacheBlock> &set);
+    void updateTimerLoad(std::vector<CacheBlock> &set, uint32_t access_ts);
+    void updateFIFOLoad(std::vector<CacheBlock> &set);
+    void updateLRULoad(std::vector<CacheBlock> &set, uint32_t access_ts);
+    void updateTimerStore(std::vector<CacheBlock> &set, uint32_t tag);
+    void updateFIFOStore(std::vector<CacheBlock> &set);
+    void updateLRUStore(std::vector<CacheBlock> &set, uint32_t tag);
+
+    uint32_t getLargestValidLineIndex(std::vector<CacheBlock> &set);
+    uint32_t getNotValidLineIndex(std::vector<CacheBlock> &set);
     void evictAndUpdateBlock(std::vector<CacheBlock> &set, uint32_t index, uint32_t tag);
 
     bool matchedTag(std::vector<CacheBlock> &set, uint32_t tag);
@@ -77,7 +87,6 @@ class Cache{
     uint32_t getTagValue(uint32_t totalTagBits, uint32_t hex);
     uint32_t getOffsetValue(uint32_t totalOffsetBits, uint32_t hex);
     uint32_t getSetValue(uint32_t totalSetBits, uint32_t totalOffsetBits, uint32_t hex);
-    uint32_t calculateTotalCacheSize(uint32_t totalSets, uint32_t kAssociativity, uint32_t sizePerBlock);
   };
 
 #endif 

@@ -43,6 +43,7 @@ gdb : csim
 #set args 256 4 16 write-allocate write-back fifo < gcc.trace
 #set args 1 1 4 write-allocate write-back fifo < test.trace
 # Generate header file dependencies
+#valgrind --leak-check=full --show-leak-kinds=all ./csim 256 4 16 write-allocate write-back fifo < gcc.trace
 depend :
 	$(CXX) $(CXXFLAGS) -M $(SRCS) > depend.mak
 

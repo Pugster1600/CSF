@@ -174,3 +174,46 @@ set: csim
 
 direct: csim
 	./csim 256 1 16 write-allocate write-back fifo < test.trace
+
+  if (it != cacheDataStructure.end()) { //set in map
+    if (matchedTag(it -> second, tag)){ //1. cache read hit
+      cacheReadHit();
+    } else if (this -> cacheDataStructure[setValue].size() >= this -> kAssociativity) { //2.1 cache read miss eviction, no new set (implicit mismatch tag! ie conditions above carry)
+      cacheReadMissEviction(it -> second, tag);
+    } else { //2.2. cache read miss no eviction, no new set
+      cacheReadMissInsert(it -> second, tag);
+    }
+  } else { //2.3 cache read miss no eviction, new set
+    cacheReadMissNewSet(setValue, tag);
+  }
+
+    if (it != cacheDataStructure.end() && matchedTag(it -> second, tag)) {
+    cacheReadHit();
+  } else if (it != cacheDataStructure.end() && this -> cacheDataStructure[setValue].size() >= this -> kAssociativity) {
+    cacheReadMissEviction(it -> second, tag);
+  } else if (it != cacheDataStructure)
+
+ if (matchedTag(it -> second, tag)){ //1. cache read hit
+      cacheReadHit();
+    } else { //2. cache miss
+      if (this -> cacheDataStructure[setValue].size() == this -> kAssociativity) { //2.1 cache read miss eviction, no new set
+        cacheReadMissEviction(it -> second, tag);
+      } 
+      else { //2.2. cache read miss no eviction, no new set
+        cacheReadMissInsert(it -> second, tag);
+      }
+    }
+    anything like this can be simplified becuause the conditoins from up top carry down just negated ie not matched tag because its else!
+
+    more specific on top and broad on bottom!
+
+for fifo, we keep track of when the thing was loaded only (increment when we bring data into cache either via load or store)
+for lru, we keep update after every access
+
+LRU means largest access_ts
+FIFO means largest load_ts
+
+//FIFO works for load
+> LRU might not work for load
+
+just need to implement these for store now
