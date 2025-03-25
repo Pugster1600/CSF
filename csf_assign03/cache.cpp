@@ -136,6 +136,8 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
   uint32_t offset = getOffsetValue(this -> totalOffsetBits, address);
   uint32_t setValue = getSetValue(this -> totalSetBits, this -> totalOffsetBits, address); //even if setBits = 0 ie directMapping, still works becuase array[0]
 
+
+  /*
   std::map<uint32_t, std::vector<CacheBlock>>::iterator it = this -> cacheDataStructure.find(setValue);
   if (matchedTag(it -> second, tag) && this -> writeHitPolicy == "write-back"){ //1. cache write hit, write back (tag in set) -> only write back has dirty 
     updateTimerStore(this->cacheDataStructure[setValue], tag); //if lru, do the lru update policy, if fifo dont do anything
@@ -161,6 +163,33 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     updateTimerStore(this->cacheDataStructure[setValue], tag); //if lru, do the lru update policy, if fifo dont do anything
     cacheStoreMissUpdateStats();
   }
+  */
+  std::vector<CacheBlock>& set = this->cacheDataStructure[setValue]; // simplified this
+  if (matchedTag(set, tag)){
+    uint32_t index = getIndexOfBlock(set, tag);
+    updateTimerStore(set, tag);
+    if(this -> writeHitPolicy == "write-back"){
+      set.dirty = true;
+    }
+    cacheStoreHitUpdateStats();
+  } else if (set -> writeMissPolicy == "write-allocate"){
+    updateTimerStore(set, tag);
+    uint32_t index = getNotValidLineIndex(set);
+    if (index == kAssociativity) { // Set full, evict
+      index = getLargestValidLineIndex(set);
+      evictAndUpdateBlock(set, index, tag);
+    } else { // Insert into invalid slot
+      set[index].tag = tag;
+      set[index].valid = true;
+      if (this->writeHitPolicy == "write-back"){
+	set[index].dirty = true;
+      }
+      cacheStoreMissUpdateStats();
+    } else { // Cache miss, no-write-allocate
+      updateTimerStore(set, tag);
+      cacheStoreMissUpdateStats();
+    }
+    }
 }
 
 uint32_t Cache::getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag){
@@ -262,6 +291,7 @@ void Cache::evictAndUpdateBlock(std::vector<CacheBlock> &set, uint32_t index, ui
 }
 
 void Cache::mainLoop(){
+  /*
   std::string line = Cache::readNextLine();
   std::istringstream stream(line);
 
@@ -294,6 +324,27 @@ void Cache::mainLoop(){
     }
     line = Cache::readNextLine();
     stream = std::istringstream(line);
+  }
+  */
+  std::string line;
+  while ((line = readNextLine()) != "") {
+    std::istringstream stream(line);
+    std::string operation, hex;
+    if (!(stream >> operation >> hex)) {
+      std::cerr << "Invalid input: " << line << std::endl;
+      continue;
+    }
+    if (operation != "l" && operation != "s") {
+      std::cerr << "Unknown operation: " << operation << std::endl;
+      continue;
+    }
+    try {
+      uint32_t address = hexToUL(hex);
+      if (operation == "l") loadData(address);
+      else storeData(address);
+    } catch (const std::exception& e) {
+      std::cerr << "Invalid address: " << hex << std::endl;
+    }
   }
 
   std::cout << "Total loads: " << this -> totalLoads << std::endl;
