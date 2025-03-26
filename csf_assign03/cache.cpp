@@ -29,24 +29,32 @@ Cache::Cache(uint32_t _totalSets, uint32_t _kAssociativity, uint32_t _sizePerBlo
 }
 
 bool Cache::matchedTag(std::vector<CacheBlock> &set, uint32_t tag){
-  for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
+  /*for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
     if (it -> tag == tag && it -> valid){
       return true;
     }
   }
   return false;
+  */
+  uint32_t index = 0;
+    for (uint32_t i = 0; i < kAssociativity; i++) {
+        if (set[i].tag == tag && set.valid) {
+	  return true;
+        }
+    }
+    return false;;
 }
 
 void Cache::cacheLoadHitUpdateStats(){
   this -> totalLoads++;
   this -> loadHits++;
-  this -> totalCycles++;
+  //this -> totalCycles++;
 }
 
 void Cache::cacheLoadMissUpdateStats(){
   this -> totalLoads++;
   this -> loadMisses++;
-  this -> totalCycles += 100;
+  //this -> totalCycles += 100;
 }
 
 void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
@@ -195,6 +203,10 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     }
     if(this -> writeHitPolicy == "write-back"){
       set[index].dirty = true;
+      total_cycles++;
+    }
+    else {
+      total_cycles+=100;
     }
     cacheStoreHitUpdateStats();
   } else if (this -> writeMissPolicy == "write-allocate"){
@@ -208,8 +220,13 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
       }
       if (this -> writeHitPolicy == "write-back") {
 	set[index].dirty = true;
+	total_cycles++;
+      }
+      else {
+	total_cycles++100;
       }
       cacheStoreMissUpdateStats();
+      
       } else { // Insert into invalid slot
          set[index].tag = tag;
          set[index].valid = true;
@@ -218,12 +235,19 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	 }
 	 if (this -> writeHitPolicy == "write-back") {
 	   set[index].dirty = true;
+	   total_cycles++:
+	 }
+	 else {
+	   total_cycles+=100;
 	 }
 	 cacheStoreMissUpdateStats();
+	 
+	 
     }
     } else { // 3. No-write-allocate
         // No cache update, just stats
         cacheStoreMissUpdateStats();
+	total_cycles++;
     }
 }
 
