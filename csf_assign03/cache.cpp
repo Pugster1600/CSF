@@ -153,13 +153,13 @@ uint32_t Cache::getNotValidLineIndex(std::vector<CacheBlock> &set) {
 void Cache::cacheStoreHitUpdateStats(){
   this -> totalStores++;
   this -> storeHits++;
-  this -> totalCycles++;
+  //this -> totalCycles++;
 }
 
 void Cache::cacheStoreMissUpdateStats(){
   this -> totalStores++;
   this -> storeMisses++;
-  this -> totalCycles += 100;
+  //this -> totalCycles += 100;
 }
 
 void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
@@ -265,11 +265,19 @@ uint32_t Cache::getOldest(std::vector<CacheBlock>& set) { // finds least recentl
 }
 
 uint32_t Cache::getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag){
-  for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
-    if (it -> tag == tag){
+  //for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
+  /* if (it -> tag == tag){
       return std::distance(set.begin(), it);
     }
+    } */
+  uint32_t index = 0;
+  for (uint32_t i = 0; i < kAssociativity; i++) {
+    if (set[i].tag == tag) {
+      return std::distance(set[0] ,set[i]);
+    }
   }
+
+
 
   return 0; //will never happen because of usuage
 }
@@ -283,14 +291,28 @@ void Cache::updateTimerLoad(std::vector<CacheBlock> &set, uint32_t access_ts){
 }
 */
 //to update fifo or lru -> all valid get incremented
+/*
 void Cache::updateFIFOLoad(std::vector<CacheBlock> &set){
+ 
   for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
     if (it -> valid){
       it -> load_ts++; //largest non valid will always be 0 (largest valid if overflows will always be 0)
     }
   }
+  
+  uint32_t index = 0;
+  for (uint32_t i = 0; i < kAssociativity; i++) {
+    if (set[i].valid) {
+      min_ts = set[i].access_ts;
+      index = i;
+    }
+   }
+   return index;
 }
+*/
 
+
+/*
 //pass a reference in instead -> all behind get incremented
 void Cache::updateLRULoad(std::vector<CacheBlock> &set, uint32_t access_ts){
   for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
@@ -299,6 +321,7 @@ void Cache::updateLRULoad(std::vector<CacheBlock> &set, uint32_t access_ts){
     } 
   }
 }
+*/
 
 //--------------------------------------------------------------------
 /*
@@ -310,6 +333,8 @@ void Cache::updateTimerStore(std::vector<CacheBlock> &set, uint32_t tag){
   }
 }
 */
+
+/*
 //to update fifo or lru
 void Cache::updateFIFOStore(std::vector<CacheBlock> &set){
   for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
@@ -327,6 +352,8 @@ void Cache::updateLRUStore(std::vector<CacheBlock> &set, uint32_t tag){
     }
   }
 }
+*/
+
 
 uint32_t Cache::getLargestValidLineIndex(std::vector<CacheBlock> &set){
   /*
