@@ -36,13 +36,16 @@ bool Cache::matchedTag(std::vector<CacheBlock> &set, uint32_t tag){
   }
   return false;
   */
+  
+  
   uint32_t index = 0;
     for (uint32_t i = 0; i < kAssociativity; i++) {
         if (set[i].tag == tag && set[i].valid) {
 	  return true;
         }
     }
-    return false;;
+    return false;
+    
 }
 
 void Cache::cacheLoadHitUpdateStats(){
