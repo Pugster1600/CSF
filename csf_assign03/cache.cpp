@@ -429,7 +429,7 @@ uint32_t Cache::getLargestValidLineIndex(std::vector<CacheBlock> &set){
 
 void Cache::evictAndUpdateBlock(std::vector<CacheBlock> &set, uint32_t index, uint32_t tag){
   if (set[index].dirty == true) {
-    this -> totalCycles++;
+    this -> totalCycles+=100;
   }
 
   set[index].tag = tag;
