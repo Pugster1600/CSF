@@ -3,7 +3,7 @@
 //dirty block is just used for cycles calculations
 
 Cache::Cache(uint32_t _totalSets, uint32_t _kAssociativity, uint32_t _sizePerBlock, std::string _writeMissPolicy, std::string _writeHitPolicy, std::string _evictionPolicy)
-:totalSets(_totalSets), kAssociativity(_kAssociativity), sizePerBlock(_sizePerBlock), writeMissPolicy(_writeMissPolicy), writeHitPolicy(_writeHitPolicy), evictionPolicy(_evictionPolicy){
+  :totalSets(_totalSets), kAssociativity(_kAssociativity), sizePerBlock(_sizePerBlock), writeMissPolicy(_writeMissPolicy), writeHitPolicy(_writeHitPolicy), evictionPolicy(_evictionPolicy), current_time(0){
   this -> totalSetBits = Cache::calculateTotalSetBits(this -> totalSets);
   this -> totalTagBits = Cache::calculateTotalTagBits(this -> totalSets, this -> sizePerBlock);
   this -> totalOffsetBits = Cache::calculateTotalOffsetBits(this -> sizePerBlock);
@@ -54,14 +54,37 @@ void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
   uint32_t offset = getOffsetValue(this -> totalOffsetBits, address);
   uint32_t setValue = getSetValue(this -> totalSetBits, this -> totalOffsetBits, address); //even if setBits = 0 ie directMapping, still works becuase array[0]
 
-  std::map<uint32_t, std::vector<CacheBlock>>::iterator it = this -> cacheDataStructure.find(setValue);
+  std::vector<CacheBlock>& set = cacheDataStructure[setValue];
   
-  if (matchedTag(it -> second, tag)){ //1. cache read hit
-    cacheReadHit(it -> second, tag);
-  } else if (getNotValidLineIndex(this -> cacheDataStructure[setValue]) == (kAssociativity)) { //2.1 cache read miss eviction
-    cacheReadMissEviction(it -> second, tag);
+  if (matchedTag(set, tag)){ //1. cache read hit
+    uint32_t index = getIndexOfBlock(set, tag);
+    if (this -> evictionPolicy == "lru"){
+    set[index].access_ts = current_time++;
+    }
+    cacheLoadHitUpdateStats();
+  } else if (getNotValidLineIndex(set) == (kAssociativity)) { //2.1 cache read miss eviction
+    uint32_t index;
+    if (evictionPolicy == "lru") {
+      index = getOldest(set);
+    } else {
+      index = getLargestValidLineIndex(set);
+    }
+    evictAndUpdateBlock(set, index, tag);
+    if (evictionPolicy == "lru") {
+      set[index].access_ts = current_time++; // Incremented here
+    }
+    cacheLoadMissUpdateStats();
   } else { //2.2 cache read miss, no eviction
-    cacheReadMissInsert(it -> second, tag);
+     uint32_t index = getNotValidLineIndex(set);
+     set[index].valid = true;
+     set[index].tag = tag;
+     if (evictionPolicy == "lru") {
+       set[index].access_ts = current_time++; // Incremented here
+     } else if (evictionPolicy == "fifo") {
+       set[index].load_ts = current_time++; // Optional: for FIFO
+     }
+     cacheLoadMissUpdateStats();
+    }
   }
 }
 
@@ -165,31 +188,56 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
   }
   */
   std::vector<CacheBlock>& set = this->cacheDataStructure[setValue]; // simplified this
-  if (matchedTag(set, tag)){
+  if (matchedTag(set, tag)){ // if matchedTag returns true then block was found in set
     uint32_t index = getIndexOfBlock(set, tag);
-    updateTimerStore(set, tag);
+    if (this -> evictionPolicy == "lru") {
+      set[index].access_ts = current_time++;
+    }
     if(this -> writeHitPolicy == "write-back"){
-      set.dirty = true;
+      set[index].dirty = true;
     }
     cacheStoreHitUpdateStats();
-  } else if (set -> writeMissPolicy == "write-allocate"){
-    updateTimerStore(set, tag);
+  } else if (this -> writeMissPolicy == "write-allocate"){
+    
     uint32_t index = getNotValidLineIndex(set);
     if (index == kAssociativity) { // Set full, evict
-      index = getLargestValidLineIndex(set);
+      index = getOldest(set);
       evictAndUpdateBlock(set, index, tag);
-    } else { // Insert into invalid slot
-      set[index].tag = tag;
-      set[index].valid = true;
-      if (this->writeHitPolicy == "write-back"){
+      if (evictionPolicy == "lru") {
+      set[index].access_ts = current_time++; // Set and increment
+      }
+      if (this -> writeHitPolicy == "write-back") {
 	set[index].dirty = true;
       }
       cacheStoreMissUpdateStats();
-    } else { // Cache miss, no-write-allocate
-      updateTimerStore(set, tag);
-      cacheStoreMissUpdateStats();
+      } else { // Insert into invalid slot
+         set[index].tag = tag;
+         set[index].valid = true;
+	 if (evictionPolicy == "lru") {
+	   set[index].access_ts = current_time++; // Set and increment
+	 }
+	 if (this -> writeHitPolicy == "write-back") {
+	   set[index].dirty = true;
+	 }
+	 cacheStoreMissUpdateStats();
     }
+    } else { // 3. No-write-allocate
+        // No cache update, just stats
+        cacheStoreMissUpdateStats();
     }
+}
+
+
+uint32_t Cache::getOldest(std::vector<CacheBlock>& set) { // finds least recently used block
+    uint32_t min_ts = UINT32_MAX; // Start with max value
+    uint32_t index = 0;
+    for (uint32_t i = 0; i < kAssociativity; i++) {
+        if (set[i].valid && set[i].access_ts < min_ts) {
+            min_ts = set[i].access_ts;
+            index = i;
+        }
+    }
+    return index;
 }
 
 uint32_t Cache::getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag){
@@ -201,7 +249,7 @@ uint32_t Cache::getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag){
 
   return 0; //will never happen because of usuage
 }
-
+/*
 void Cache::updateTimerLoad(std::vector<CacheBlock> &set, uint32_t access_ts){
   if (this -> evictionPolicy == "fifo") {
     updateFIFOLoad(set); //this will just increment them all
@@ -209,7 +257,7 @@ void Cache::updateTimerLoad(std::vector<CacheBlock> &set, uint32_t access_ts){
     updateLRULoad(set, access_ts); //this will also just increment them all
   }
 }
-
+*/
 //to update fifo or lru -> all valid get incremented
 void Cache::updateFIFOLoad(std::vector<CacheBlock> &set){
   for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
@@ -229,7 +277,7 @@ void Cache::updateLRULoad(std::vector<CacheBlock> &set, uint32_t access_ts){
 }
 
 //--------------------------------------------------------------------
-
+/*
 void Cache::updateTimerStore(std::vector<CacheBlock> &set, uint32_t tag){
   if (this -> evictionPolicy == "fifo") {
     updateFIFOStore(set);
@@ -237,7 +285,7 @@ void Cache::updateTimerStore(std::vector<CacheBlock> &set, uint32_t tag){
     updateLRUStore(set, tag);
   }
 }
-
+*/
 //to update fifo or lru
 void Cache::updateFIFOStore(std::vector<CacheBlock> &set){
   for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
@@ -257,6 +305,7 @@ void Cache::updateLRUStore(std::vector<CacheBlock> &set, uint32_t tag){
 }
 
 uint32_t Cache::getLargestValidLineIndex(std::vector<CacheBlock> &set){
+  /*
   std::vector<CacheBlock>::iterator largest = set.begin();
   if (this -> evictionPolicy == "fifo") {
     for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
@@ -273,6 +322,24 @@ uint32_t Cache::getLargestValidLineIndex(std::vector<CacheBlock> &set){
   }
   
   return std::distance(set.begin(), largest);
+  */
+  uint32_t largestIndex = 0;
+    
+  if (this->evictionPolicy == "fifo") {
+      for (uint32_t i = 1; i < kAssociativity; i++) {
+         if ((set[i].load_ts > set[largestIndex].load_ts) && set[i].valid) {
+            largestIndex = i;
+         }
+      }
+  } else if (this->evictionPolicy == "lru") {
+      for (uint32_t i = 1; i < kAssociativity; i++) {
+         if ((set[i].access_ts > set[largestIndex].access_ts) && set[i].valid) {
+             largestIndex = i;
+         }
+      }
+  }
+    
+  return largestIndex;
 }
 
 void Cache::evictAndUpdateBlock(std::vector<CacheBlock> &set, uint32_t index, uint32_t tag){
@@ -284,9 +351,9 @@ void Cache::evictAndUpdateBlock(std::vector<CacheBlock> &set, uint32_t index, ui
   set[index].dirty = false;
   set[index].valid = true;
   if (this -> evictionPolicy == "fifo") {
-    set[index].load_ts = 0;
+    set[index].load_ts = current_time++;
   } else {
-    set[index].access_ts = 0;
+    set[index].access_ts = current_time++;
   }
 }
 

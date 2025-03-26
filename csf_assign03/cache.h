@@ -40,10 +40,13 @@ class Cache{
     uint32_t totalSetBits;
     uint32_t totalTagBits;
     uint32_t totalOffsetBits;
+  
 
-    uint32_t totalLoads = 0;
+
+  uint32_t totalLoads = 0;
     uint32_t loadHits = 0;
     uint32_t loadMisses = 0;
+  uint32_t current_time = 0; //global time;
 
     uint32_t totalStores = 0;
     uint32_t storeHits = 0;
@@ -63,6 +66,9 @@ class Cache{
     void storeData(uint32_t address); //cache write policy (store to RAM if miss)
     void cacheStoreHitUpdateStats();
     void cacheStoreMissUpdateStats();
+  uint32_t Cache::getOldest(std::vector<CacheBlock>& set)
+
+
     uint32_t getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag);
 
     uint32_t getIndexFromTimer(std::vector<CacheBlock> &set, uint32_t timer);
