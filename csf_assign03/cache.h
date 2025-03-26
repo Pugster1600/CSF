@@ -67,7 +67,7 @@ class Cache{
     void cacheStoreHitUpdateStats();
     void cacheStoreMissUpdateStats();
   uint32_t getOldest(std::vector<CacheBlock>& set);
-
+  uint32_t getOldestFIFO(std::vector<CacheBlock>& set);
 
     uint32_t getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag);
 

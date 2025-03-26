@@ -79,7 +79,7 @@ void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
     if (evictionPolicy == "lru") {
       index = getOldest(set);
     } else {
-      index = getLargestValidLineIndex(set);
+      index = getOldestFIFO(set);
     }
     evictAndUpdateBlock(set, index, tag);
     if (evictionPolicy == "lru") {
@@ -210,6 +210,7 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     if (this -> evictionPolicy == "lru") {
       set[index].access_ts = current_time++;
     }
+    
     if(this -> writeHitPolicy == "write-back"){
       set[index].dirty = true;
       totalCycles++;
@@ -222,10 +223,19 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     
     uint32_t index = getNotValidLineIndex(set);
     if (index == kAssociativity) { // Set full, evict
-      index = getOldest(set);
+      if (evictionPolicy == "lru") {
+	index = getOldest(set);
+      }
+      else {
+	index = getOldestFIFO(set);
+      }
+      //index = getOldest(set);
       evictAndUpdateBlock(set, index, tag);
       if (evictionPolicy == "lru") {
       set[index].access_ts = current_time++; // Set and increment
+      }
+      else {
+	set[index].load_ts = current_time++;
       }
       if (this -> writeHitPolicy == "write-back") {
 	set[index].dirty = true;
@@ -242,6 +252,9 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	 if (evictionPolicy == "lru") {
 	   set[index].access_ts = current_time++; // Set and increment
 	 }
+	 else {
+	   set[index].load_ts = current_time++;
+	 }
 	 if (this -> writeHitPolicy == "write-back") {
 	   set[index].dirty = true;
 	   totalCycles++;
@@ -256,7 +269,7 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     } else { // 3. No-write-allocate
         // No cache update, just stats
         cacheStoreMissUpdateStats();
-	totalCycles++;
+	totalCycles+=100;
     }
 }
 
@@ -271,6 +284,18 @@ uint32_t Cache::getOldest(std::vector<CacheBlock>& set) { // finds least recentl
         }
     }
     return index;
+}
+
+uint32_t Cache::getOldestFIFO(std::vector<CacheBlock>& set) {
+  uint32_t min_ts = UINT32_MAX;
+  uint32_t index = 0;
+  for (uint32_t i = 0; i < kAssociativity; i++) {
+    if (set[i].valid && set[i].load_ts < min_ts) {
+      min_ts = set[i].load_ts;
+      index = i;
+    }
+  }
+  return index;
 }
 
 uint32_t Cache::getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag){
