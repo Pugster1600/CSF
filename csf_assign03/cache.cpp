@@ -495,8 +495,8 @@ uint32_t Cache::calculateTotalSetBits(uint32_t totalSets){
 }
 
 uint32_t Cache::calculateTotalOffsetBits(uint32_t sizePerBlock){
-  uint32_t sectionsPerBlock = sizePerBlock / 4;
-  return static_cast<uint32_t>(log2(sectionsPerBlock));  //if each line/block has 16 bytes, then we have 4 offsets
+  //uint32_t sectionsPerBlock = sizePerBlock / 4;
+  return static_cast<uint32_t>(log2(sizePerBlock));  //if each line/block has 16 bytes, then we have 4 offsets
 }
 
 uint32_t Cache::calculateTotalTagBits(uint32_t totalSets, uint32_t sizePerBlock){
