@@ -66,7 +66,7 @@ class Cache{
     void storeData(uint32_t address); //cache write policy (store to RAM if miss)
     void cacheStoreHitUpdateStats();
     void cacheStoreMissUpdateStats();
-  uint32_t Cache::getOldest(std::vector<CacheBlock>& set)
+  uint32_t getOldest(std::vector<CacheBlock>& set);
 
 
     uint32_t getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag);

@@ -38,7 +38,7 @@ bool Cache::matchedTag(std::vector<CacheBlock> &set, uint32_t tag){
   */
   uint32_t index = 0;
     for (uint32_t i = 0; i < kAssociativity; i++) {
-        if (set[i].tag == tag && set.valid) {
+        if (set[i].tag == tag && set[i].valid) {
 	  return true;
         }
     }
@@ -70,6 +70,7 @@ void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
     set[index].access_ts = current_time++;
     }
     cacheLoadHitUpdateStats();
+    totalCycles++;
   } else if (getNotValidLineIndex(set) == (kAssociativity)) { //2.1 cache read miss eviction
     uint32_t index;
     if (evictionPolicy == "lru") {
@@ -82,6 +83,7 @@ void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
       set[index].access_ts = current_time++; // Incremented here
     }
     cacheLoadMissUpdateStats();
+    totalCycles+=101;
   } else { //2.2 cache read miss, no eviction
      uint32_t index = getNotValidLineIndex(set);
      set[index].valid = true;
@@ -92,10 +94,11 @@ void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
        set[index].load_ts = current_time++; // Optional: for FIFO
      }
      cacheLoadMissUpdateStats();
+     totalCycles+=101;
     }
-  }
 }
 
+/*
 void Cache::cacheReadHit(std::vector<CacheBlock> &set, uint32_t tag){ //
   uint32_t index = getIndexOfBlock(set, tag);
 
@@ -106,7 +109,9 @@ void Cache::cacheReadHit(std::vector<CacheBlock> &set, uint32_t tag){ //
 
   cacheLoadHitUpdateStats();
 }
+*/
 
+/*
 void Cache::cacheReadMissEviction(std::vector<CacheBlock> &set, uint32_t tag){
   uint32_t index = getLargestValidLineIndex(set); //largest index will be == k, so it will reset to 0
   updateTimerLoad(set, kAssociativity); //largest access_t will always be < k
@@ -127,6 +132,7 @@ void Cache::cacheReadMissInsert(std::vector<CacheBlock> &set, uint32_t tag){
   set[index].tag = tag;
   cacheLoadMissUpdateStats();
 }
+ */
 
 uint32_t Cache::getIndexFromTimer(std::vector<CacheBlock> &set, uint32_t timer) {
   for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
@@ -203,10 +209,10 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     }
     if(this -> writeHitPolicy == "write-back"){
       set[index].dirty = true;
-      total_cycles++;
+      totalCycles++;
     }
     else {
-      total_cycles+=100;
+      totalCycles+=101;
     }
     cacheStoreHitUpdateStats();
   } else if (this -> writeMissPolicy == "write-allocate"){
@@ -220,10 +226,10 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
       }
       if (this -> writeHitPolicy == "write-back") {
 	set[index].dirty = true;
-	total_cycles++;
+	totalCycles++;
       }
       else {
-	total_cycles++100;
+	totalCycles+=101;
       }
       cacheStoreMissUpdateStats();
       
@@ -235,10 +241,10 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	 }
 	 if (this -> writeHitPolicy == "write-back") {
 	   set[index].dirty = true;
-	   total_cycles++:
+	   totalCycles++;
 	 }
 	 else {
-	   total_cycles+=100;
+	   totalCycles+=101;
 	 }
 	 cacheStoreMissUpdateStats();
 	 
@@ -247,7 +253,7 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     } else { // 3. No-write-allocate
         // No cache update, just stats
         cacheStoreMissUpdateStats();
-	total_cycles++;
+	totalCycles++;
     }
 }
 
@@ -270,10 +276,10 @@ uint32_t Cache::getIndexOfBlock(std::vector<CacheBlock> &set, uint32_t tag){
       return std::distance(set.begin(), it);
     }
     } */
-  uint32_t index = 0;
+  
   for (uint32_t i = 0; i < kAssociativity; i++) {
     if (set[i].tag == tag) {
-      return std::distance(set[0] ,set[i]);
+      return i;
     }
   }
 
