@@ -87,7 +87,7 @@ void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
       set[index].access_ts = current_time++; // Incremented here
     }
     cacheLoadMissUpdateStats();
-    totalCycles+=cyclesPerBlock+1;
+    totalCycles+=cyclesPerBlock;
   } else { //2.2 cache read miss, no eviction
      uint32_t index = getNotValidLineIndex(set);
      set[index].valid = true;
@@ -152,10 +152,10 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
     
     if(this -> writeHitPolicy == "write-back"){
       set[index].dirty = true;
-      totalCycles+= cyclesPerBlock+1;
+      totalCycles+= 1;
     }
     else {
-      totalCycles+=cyclesPerBlock+1+100;
+      totalCycles+= 101;
     }
     cacheStoreHitUpdateStats();
   } else if (this -> writeMissPolicy == "write-allocate"){
@@ -181,7 +181,7 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	totalCycles+=cyclesPerBlock+1;
       }
       else {
-	totalCycles+=cyclesPerBlock+1+100;
+	totalCycles+=cyclesPerBlock;
       }
       cacheStoreMissUpdateStats();
       
