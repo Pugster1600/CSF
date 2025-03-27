@@ -181,7 +181,7 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	totalCycles+=cyclesPerBlock+1;
       }
       else {
-	totalCycles+=cyclesPerBlock;
+	totalCycles+= 100;
       }
       cacheStoreMissUpdateStats();
       
@@ -199,9 +199,10 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	   totalCycles++;
 	 }
 	 else {
-	   totalCycles+=101;
+	   totalCycles+=101;;
 	 }
 	 cacheStoreMissUpdateStats();
+	 totalCycles += cyclesPerBlock;
   }
 	 
   } else { // 3. No-write-allocate
