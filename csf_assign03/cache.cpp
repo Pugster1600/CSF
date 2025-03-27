@@ -239,10 +239,10 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
       }
       if (this -> writeHitPolicy == "write-back") {
 	set[index].dirty = true;
-	totalCycles++;
+	totalCycles+=101;
       }
       else {
-	totalCycles+=101;
+	totalCycles+=201;
       }
       cacheStoreMissUpdateStats();
       
@@ -263,13 +263,15 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	   totalCycles+=101;
 	 }
 	 cacheStoreMissUpdateStats();
+  }
 	 
-	 
-    } else { // 3. No-write-allocate
+  } else { // 3. No-write-allocate
         // No cache update, just stats
         cacheStoreMissUpdateStats();
-	totalCycles+=100;
-    }
+	      totalCycles+=100;
+  }
+  
+    
 }
 
 
