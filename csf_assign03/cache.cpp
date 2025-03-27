@@ -265,7 +265,6 @@ void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
 	 cacheStoreMissUpdateStats();
 	 
 	 
-    }
     } else { // 3. No-write-allocate
         // No cache update, just stats
         cacheStoreMissUpdateStats();
@@ -429,7 +428,7 @@ uint32_t Cache::getLargestValidLineIndex(std::vector<CacheBlock> &set){
 
 void Cache::evictAndUpdateBlock(std::vector<CacheBlock> &set, uint32_t index, uint32_t tag){
   if (set[index].dirty == true) {
-    this -> totalCycles+=100;
+    this -> totalCycles += (100*(sizePerBlock/4));
   }
 
   set[index].tag = tag;
