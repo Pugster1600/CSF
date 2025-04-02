@@ -25,9 +25,12 @@ solution.zip :
 
 test : csim
 	./csim 256 4 16 write-allocate write-back fifo < gcc.trace
-
+# ./csim 1 8192 16 write-allocate write-through lru < gcc.trace
+# ./csim 1 8192 16 write-allocate write-back lru < gcc.trace
+#set args 1 8192 16 write-allocate write-through lru < gcc.trace
 sanity: csim
-	./csim 1 1 4 write-allocate write-back fifo < test.trace
+	./csim 256 4 16 write-allocate write-back fifo < test.trace
+#./csim 1 1 4 write-allocate write-back fifo < test.trace
 associative: csim
 	./csim 1 256 16 write-allocate write-back fifo < test.trace
 
