@@ -16,27 +16,16 @@ Cache::Cache(uint32_t _totalSets, uint32_t _kAssociativity, uint32_t _sizePerBlo
       this->cacheDataStructure[i][j].valid = false;
     }
   }
-
-  std::cout << "totalSets: " << totalSets << std::endl;
-  std::cout << "kAssociativity: " << kAssociativity << std::endl;
-  std::cout << "sizePerBlock: " << sizePerBlock << std::endl;
-  std::cout << "writeMissPolicy: " << writeMissPolicy << std::endl;
-  std::cout << "writeHitPolicy: " << writeHitPolicy << std::endl;
-  std::cout << "evictionPolicy: " << evictionPolicy << std::endl;
-  std::cout << "totalSetBits: " << totalSetBits << std::endl;
-  std::cout << "totalTagBits: " << totalTagBits << std::endl;
-  std::cout << "totalOffsetBits: " << totalOffsetBits << std::endl;
 }
 
 bool Cache::matchedTag(std::vector<CacheBlock> &set, uint32_t tag){
   //Method returns true if block found in the set, does linear search   
-  uint32_t index = 0;
-    for (uint32_t i = 0; i < kAssociativity; i++) {
-      if (set[i].tag == tag && set[i].valid) { //only returns true if block same tag and valid
-	  return true;
-        }
+  for (uint32_t i = 0; i < kAssociativity; i++) {
+    if (set[i].tag == tag && set[i].valid) { //only returns true if block same tag and valid
+	    return true;
     }
-    return false;
+  }
+  return false;
     
 }
 
@@ -54,7 +43,6 @@ void Cache::cacheLoadMissUpdateStats(){
 
 void Cache::loadData(uint32_t address){ //RAM -> cache (cpu read)
   uint32_t tag = getTagValue(this -> totalTagBits, address);
-  uint32_t offset = getOffsetValue(this -> totalOffsetBits, address);
   uint32_t setValue = getSetValue(this -> totalSetBits, this -> totalOffsetBits, address); //even if setBits = 0 ie directMapping, still works becuase array[0]
 
   std::vector<CacheBlock>& set = cacheDataStructure[setValue];
@@ -111,7 +99,6 @@ uint32_t Cache::getNotValidLineIndex(std::vector<CacheBlock> &set) {
   //does linear search
   for (std::vector<CacheBlock>::iterator it = set.begin(); it != set.end(); it++){
     if ((it -> valid) == false){
-      std::cout << it -> valid << std::endl;
       return std::distance(set.begin(), it);
     }
   }
@@ -133,7 +120,6 @@ void Cache::cacheStoreMissUpdateStats(){
 
 void Cache::storeData(uint32_t address){ //cache -> RAM (cpu write)
   uint32_t tag = getTagValue(this -> totalTagBits, address);
-  uint32_t offset = getOffsetValue(this -> totalOffsetBits, address);
   uint32_t setValue = getSetValue(this -> totalSetBits, this -> totalOffsetBits, address); //even if setBits = 0 ie directMapping, still works becuase array[0]
   uint32_t cyclesPerBlock = 100 * (sizePerBlock / 4); // Cost to transfer a full block
 
