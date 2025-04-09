@@ -13,16 +13,19 @@ void swap( int64_t *arr, unsigned long i, unsigned long j );
 unsigned long partition( int64_t *arr, unsigned long start, unsigned long end );
 int quicksort( int64_t *arr, unsigned long start, unsigned long end, unsigned long par_threshold );
 
+
 // TODO: declare additional helper functions if needed
 
+//having Child struct helps with storing data specific to process made with fork()
 typedef struct {
   pid_t pid; //pid_t is a ID for processes
+  int status;   //status of child, will be used to check if waitpid worked. Can check bits with WIFEXIT
   int valid;    //zero if not 1 is valid
   int waited;   // set to 1 after process done
-  int status;   //status of child
 } Child;
 
-Child quicksort_subproc(int64_t *arr, unsigned long start, unsigned long end, unsigned long par_threshold);
+Child quicksort_recurse(int64_t *arr, unsigned long start, unsigned long end, unsigned long par_threshold);
+int waitChild(Child *child);
 int main( int argc, char **argv ) {
   unsigned long par_threshold;
   if ( argc != 3 || sscanf( argv[2], "%lu", &par_threshold ) != 1 ) {
@@ -213,10 +216,14 @@ int quicksort( int64_t *arr, unsigned long start, unsigned long end, unsigned lo
   Child right = quicksort_recurse(arr, mid + 1, end, par_threshold);
 
   // Wait for children
-  waitChild(&left);
-  waitChild(&right);
+  //we need to wait for children 
+  int leftSuccess = waitChild(&left);
+  int rightSuccess = waitChild(&right);
 
-  return 1;
+  // need to have some check to see if everything got deleted, hence quicksort_check_success
+  // decided to combine waitChild and check success into one function for simplicity
+
+  return leftSuccess && rightSuccess;
 }
 
 Child quicksort_recurse(int64_t *arr, unsigned long start, unsigned long end, unsigned long par_threshold) {
@@ -224,32 +231,52 @@ Child quicksort_recurse(int64_t *arr, unsigned long start, unsigned long end, un
   pid_t pid = fork(); // creates two proceses, returns 0 to child and >1 to parent
 
   if (pid == 0) {
-      // Child process
+      // pid will be zero to child process
       int success = quicksort(arr, start, end, par_threshold);
       exit(success ? 0 : 1);
   } else if (pid < 0) {
-      // Fork failed
+      //don't really know how this would happen
+      // fork failed
       perror("Fork failed");
       return child;
   } else {
       // Parent process
+      //since parent process, return the child whose pid can then be checked for success 
       child.pid = pid;
       child.valid = 1;
       return child;
   }
 }
 
-void recurseChild(Child *child) {
-  if (!child->valid || child->waited)
-      return;
-
-  int status;
-  if (waitpid(child->pid, &status, 0) < 0) {
-      perror("Waitpid failed");
-      return;
+int waitChild(Child *child) {
+  //I combined waitChild and quicksort_check_success since it simplified code a bit
+  //also changed name to waitChild since I think method name fits function better
+  if (!child->valid){
+        return 0;
+      }
+  if (child->waited){
+    //WIFEXITED checks bits in the status integer, returns 0 if everything correct
+        return WIFEXITED(child->status) && WEXITSTATUS(child->status) == 0;
   }
+  int wstatus;
+  int rc = waitpid(child->pid, &wstatus, 0);
+  if (rc < 0) {
+    //wattpid failed handle error
+      perror("Waitpid failed");
+      return 0;
+  } 
+
   child->waited = 1;
-  child->status = status;
+  child->status = wstatus;
+  //set child to waited so it can be zombified
+    
+  if (!WIFEXITED(wstatus) || WEXITSTATUS(wstatus) != 0) {
+        return 0;  // Failure: didn't exit normally or exited with non-zero code
+  }
+  return 1;
+  
 }
+
+
 
 // TODO: define additional helper functions if needed
