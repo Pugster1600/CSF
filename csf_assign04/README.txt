@@ -59,8 +59,8 @@ When we fork multiple processes, the OS kernel determines which cores execute wh
 These cores exceute in parallel but also require overhead from the OS kernel to create extra processes and context switch when cores less than processes.
 
 We saw the results we did because as the number of child processes increased beyond the cores available, the overhead time required (such as creating the new process and 
-context switch to different processes) was greater than the time saved from creating additional processes. Additional processes are created until the amount of data is less
-than the parition size.
+context switch to different processes) was greater than the time saved from creating additional processes. Additional processes are created until the amount of data is 
+less than or equal to the parition size.
 As we reduced the threshold size from 2097152 to 16384 (thus increasing number of processes), performance improved until around theshold 2621444. It then dropped as the threshold size
 kept getting smaller. When we look closely, we see that we have 8 processes running at threshold 262144, and we also have 8 cores on a ugrad machine. 
 This suggests that as we increase the process count and when we have fewer processes than cores, the time saved from parallel sorting is worth 
