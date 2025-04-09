@@ -15,6 +15,14 @@ int quicksort( int64_t *arr, unsigned long start, unsigned long end, unsigned lo
 
 // TODO: declare additional helper functions if needed
 
+typedef struct {
+  pid_t pid; //pid_t is a ID for processes
+  int valid;    //zero if not 1 is valid
+  int waited;   // set to 1 after process done
+  int status;   //status of child
+} Child;
+
+Child quicksort_subproc(int64_t *arr, unsigned long start, unsigned long end, unsigned long par_threshold);
 int main( int argc, char **argv ) {
   unsigned long par_threshold;
   if ( argc != 3 || sscanf( argv[2], "%lu", &par_threshold ) != 1 ) {
@@ -22,29 +30,52 @@ int main( int argc, char **argv ) {
     exit( 1 );
   }
 
-  int fd;
+  
 
   // open the named file
   // TODO: open the named file
-
+  int fd = open(argv[1], O_RDWR);
+  if (fd < 0) {
+      perror("Error opening file");
+      exit(1);
+  }
   // determine file size and number of elements
   unsigned long file_size, num_elements;
   // TODO: determine the file size and number of elements
+  struct stat statbuf;
+  if (fstat(fd, &statbuf) != 0) {
+      perror("Error getting file stats");
+      close(fd);
+      exit(1);
+  }
+  file_size = statbuf.st_size;
+  num_elements = file_size / sizeof(int64_t);
 
   // mmap the file data
-  int64_t *arr;
-  // TODO: mmap the file data
+  int64_t *arr = mmap(NULL, file_size, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+  close(fd);  // We can close the fd now as mmap has the reference
+  if (arr == MAP_FAILED) {
+      perror("Error mapping file");
+      exit(1);
+  }
+  
 
   // Sort the data!
   int success;
   success = quicksort( arr, 0, num_elements, par_threshold );
   if ( !success ) {
     fprintf( stderr, "Error: sorting failed\n" );
+    munmap(arr, file_size);
     exit( 1 );
   }
 
   // Unmap the file data
   // TODO: unmap the file data
+
+  if (munmap(arr, file_size) != 0) {
+    perror("Error unmapping file");
+    exit(1);
+  }
 
   return 0;
 }
@@ -175,13 +206,50 @@ int quicksort( int64_t *arr, unsigned long start, unsigned long end, unsigned lo
   // Partition
   unsigned long mid = partition( arr, start, end );
 
-  // Recursively sort the left and right partitions
-  int left_success, right_success;
-  // TODO: modify this code so that the recursive calls execute in child processes
-  left_success = quicksort( arr, start, mid, par_threshold );
-  right_success = quicksort( arr, mid + 1, end, par_threshold );
 
-  return left_success && right_success;
+  // Recursively sort the left and right partitions
+  
+  Child left = quicksort_recurse(arr, start, mid, par_threshold);
+  Child right = quicksort_recurse(arr, mid + 1, end, par_threshold);
+
+  // Wait for children
+  waitChild(&left);
+  waitChild(&right);
+
+  return 1;
+}
+
+Child quicksort_recurse(int64_t *arr, unsigned long start, unsigned long end, unsigned long par_threshold) {
+  Child child = {0, 0, 0, 0};
+  pid_t pid = fork(); // creates two proceses, returns 0 to child and >1 to parent
+
+  if (pid == 0) {
+      // Child process
+      int success = quicksort(arr, start, end, par_threshold);
+      exit(success ? 0 : 1);
+  } else if (pid < 0) {
+      // Fork failed
+      perror("Fork failed");
+      return child;
+  } else {
+      // Parent process
+      child.pid = pid;
+      child.valid = 1;
+      return child;
+  }
+}
+
+void recurseChild(Child *child) {
+  if (!child->valid || child->waited)
+      return;
+
+  int status;
+  if (waitpid(child->pid, &status, 0) < 0) {
+      perror("Waitpid failed");
+      return;
+  }
+  child->waited = 1;
+  child->status = status;
 }
 
 // TODO: define additional helper functions if needed
