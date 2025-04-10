@@ -65,5 +65,5 @@ As we reduced the threshold size from 2097152 to 16384 (thus increasing number o
 Thresholds smaller than 262144 saw diminishing returns. When we dive deeper, we see that we have 8 processes running at threshold 262144, and we also happen to have 8 cores on a ugrad machine. 
 This suggests that when we increase the process count and when we have fewer processes than cores, the time saved from parallel sorting is worth 
 the extra overhead required from the OS kernel to create extra processes and assign processes to cores.
-However, when we have more processes than cores, the OS kernel needs to concurrently execute tasks (rather than purely parallel execution) and context switch between the processes.
+However, when we have more processes than cores, the cores needs to concurrently execute tasks (rather than purely parallel execution) and context switch between the processes.
 The combination of additional overhead with context switches and not truly parallel exceution is the reason we saw the results we did. 
