@@ -209,7 +209,6 @@ int quicksort( int64_t *arr, unsigned long start, unsigned long end, unsigned lo
   // Partition
   unsigned long mid = partition( arr, start, end );
 
-
   // Recursively sort the left and right partitions
   
   Child left = quicksort_recurse(arr, start, mid, par_threshold);
@@ -235,7 +234,6 @@ Child quicksort_recurse(int64_t *arr, unsigned long start, unsigned long end, un
       int success = quicksort(arr, start, end, par_threshold);
       exit(success ? 0 : 1);
   } else if (pid < 0) {
-      //don't really know how this would happen
       // fork failed
       perror("Fork failed");
       return child;
@@ -249,8 +247,6 @@ Child quicksort_recurse(int64_t *arr, unsigned long start, unsigned long end, un
 }
 
 int waitChild(Child *child) {
-  //I combined waitChild and quicksort_check_success since it simplified code a bit
-  //also changed name to waitChild since I think method name fits function better
   if (!child->valid){
         return 0;
       }
