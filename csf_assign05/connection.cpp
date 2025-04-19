@@ -15,7 +15,7 @@ Connection::Connection(int fd)
   : m_fd(fd)
   , m_last_result(SUCCESS) {
   // TODO: call rio_readinitb to initialize the rio_t object
-  rio_readinitb(m_fdbuf, m_fd);
+  rio_readinitb(&m_fdbuf, m_fd);
 }
 
 void Connection::connect(const std::string &hostname, int port) {
@@ -55,7 +55,7 @@ bool Connection::send(const Message &msg) {
   // make sure that m_last_result is set appropriately
 
   std::string message = msg.tag + ":" + msg.data + "\n";
-  ssize_t msgWrite = rio_writen(m_fd, message.c_str(), message,size());
+  ssize_t msgWrite = rio_writen(m_fd, message.c_str(), message.size());
 
   if (msgWrite != (ssize_t)buffer.size()) {
     m_last_result = EOF_OR_ERROR;
