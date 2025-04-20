@@ -42,7 +42,6 @@ void Connection::close() {
     Close(this->m_fd);
     this->m_fd = -1; // Mark as closed
   }
-
 }
 
 bool Connection::send(const Message &msg) {
@@ -52,7 +51,7 @@ bool Connection::send(const Message &msg) {
   std::string message = msg.tag + ":" + msg.data + "\n";
   ssize_t msgWrite = rio_writen(this->m_fd, message.c_str(), message.size()); //write n bytes NOT buffered
 
-  if (msgWrite != (ssize_t)message.size()) { //function returns length of written if successful (read it!)
+  if (msgWrite != (ssize_t)message.size()) { //function returns length of written if successful
     this->m_last_result = EOF_OR_ERROR;
     return false;
   }
@@ -65,10 +64,8 @@ bool Connection::receive(Message &msg) {
   // TODO: receive a message, storing its tag and data in msg
   // return true if successful, false if not
   // make sure that m_last_result is set appropriately
-  
+
   char buffer[msg.MAX_LEN + 1];
-  //ssize_t msgLength = rio_readnb(&this -> m_fdbuf, buffer, msg.MAX_LEN); //read n bytes buffered -> buffer is basically for us to use while m_fdbuf is like the actual one
-  //ssize_t msgLength = rio_readn(this -> m_fd, buffer, msg.MAX_LEN); //read n bytes not buffered
   ssize_t msgLength = rio_readlineb(&this->m_fdbuf, buffer, msg.MAX_LEN); //read line
 
   if (msgLength <= 0) { //msgRead >= 0 success according to function
@@ -87,7 +84,7 @@ bool Connection::receive(Message &msg) {
   msg.tag = receivedMsg.substr(0, pos);
   msg.data = receivedMsg.substr(pos + 1);
 
-  //std::cout << buffer << std::endl; //NOTE: DONT NEED THIS JUST FOR DEBUG REASONS!
+  //std::cout << buffer << std::endl; //for debugging
 
   msg.recievedData = true;
   this -> m_last_result = SUCCESS;
