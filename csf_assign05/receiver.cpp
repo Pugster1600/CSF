@@ -8,23 +8,22 @@
 #include "client_util.h"
 
 bool readMessage(std::string &data, std::string& room, std::string &sender, std::string &message){
+  //1. separate room : sender + message
   size_t pos = data.find(':');
   if (pos == std::string::npos){
     return false;
   }
-
   room = data.substr(0,pos);
 
-  std::string roomAndSender = data.substr(pos + 1);
-
-  pos = roomAndSender.find(':');
+  //2. seprate sender : message
+  std::string senderAndMessageString = data.substr(pos + 1);
+  pos = senderAndMessageString.find(':');
   if (pos == std::string::npos){
     return false;
   }
 
-  sender = roomAndSender.substr(0,pos);
-  message = roomAndSender.substr(pos + 1);
-
+  sender = senderAndMessageString.substr(0,pos);
+  message = senderAndMessageString.substr(pos + 1);
   return true;
 }
 
@@ -102,7 +101,6 @@ int main(int argc, char **argv) {
     }
     std::cout << sender << ": " << message;
   }
-
   return 0;
 }
 
