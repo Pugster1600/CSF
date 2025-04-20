@@ -14,6 +14,8 @@ struct Message {
   std::string tag;
   std::string data;
 
+  bool recievedData = false;
+
   Message() { }
 
   Message(const std::string &tag, const std::string &data)

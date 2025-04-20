@@ -18,19 +18,22 @@ int main(int argc, char **argv) {
   std::string username = argv[3];
   std::string room_name = argv[4];
 
-  Connection conn;
-
   // TODO: connect to server
-  conn.connect(server_hostname, server_port);
+  Connection serverConnection;
+  serverConnection.connect(server_hostname, server_port);
 
   // TODO: send rlogin and join messages (expect a response from
   //       the server for each one)
-  Message login = new Message(&TAG_RLOGIN, )
-  conn.send()
+  Message message = Message(TAG_RLOGIN, username); //rlogin:username
 
-
+  serverConnection.send(message);
+  
   // TODO: loop waiting for messages from server
   //       (which should be tagged with TAG_DELIVERY)
+  while (1) {
+    
+  }
+
 
 
   return 0;
