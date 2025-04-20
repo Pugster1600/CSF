@@ -23,11 +23,11 @@ bool getCommand(const std::string &message, std::string &command){
 
 void getData(const std::string &message, const std::string &command, std::string &data){
   if (command == TAG_JOIN) {
-    data = message.substr(6); // /join_
+    data = message.substr(6);     // /join_
   } else if (command == TAG_LEAVE) {
-    data = "leaving"; // /leave_
+    data = "leaving";             // /leave_
   } else if (command == TAG_QUIT) {
-    data = "quitting"; // /quit_
+    data = "quitting";            // /quit_
   }
 }
 
