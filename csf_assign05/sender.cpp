@@ -7,7 +7,7 @@
 #include "connection.h"
 #include "client_util.h"
 
-void getCommand(const std::string &message, std::string &command){
+bool getCommand(const std::string &message, std::string &command){
   //join, leave, quit
   if (message.rfind("/join", 0) == 0){
     command = std::string(TAG_JOIN);
@@ -16,8 +16,9 @@ void getCommand(const std::string &message, std::string &command){
   } else if (message.rfind("/quit", 0) == 0){
     command = std::string(TAG_QUIT);
   } else {
-    command = std::string(TAG_ERR);
+    return false;
   }
+  return true;
 }
 
 void getData(const std::string &message, const std::string &command, std::string &data){
@@ -44,49 +45,69 @@ int main(int argc, char **argv) {
   server_port = std::stoi(argv[2]);
   username = argv[3];
 
-  // TODO: connect to server
-  //1. connect to server
+  // TODO: 1. connect to server
   Connection serverConnection;
   serverConnection.connect(server_hostname, server_port);
 
-  // TODO: send slogin message
-  //2. send slogin message
-  Message message = Message(TAG_SLOGIN, username);
-  serverConnection.send(message);
-  serverConnection.receive(message);
-  if (message.tag == TAG_ERR) {
-    std::cout << "error: " << message.data << std::endl;
+  if (!serverConnection.is_open()){
+    std::cerr << "failed to connect to server" << std::endl;
+    return 1;
+  }
+
+  // TODO: 2. send slogin message
+  Message login = Message(TAG_SLOGIN, username);
+  if (!serverConnection.send(login)) {
+    std::cerr << "failed to send login message" << std::endl;
+    return 1;
+  }
+  if (!serverConnection.receive(login)) {
+    std::cerr << "failed to reciever login confirmation" << std::endl;
+  }
+
+  if (login.tag == TAG_ERR) {
+    std::cerr << login.data;
     return 1;
   } 
 
   // TODO: loop reading commands from user, sending messages to
   //       server as appropriate
-
-  //4. loop - including join room
+  //3. loop - including join room
   while (1) {
+    Message loopMessage;
     std::string line;
     std::getline(std::cin, line);
 
     if (line[0] != '/') {
-      message.tag = TAG_SENDALL;
-      message.data = line;
+      loopMessage.tag = TAG_SENDALL;
+      loopMessage.data = line;
     } else {
-      getCommand(line, message.tag);
-      getData(line, message.tag, message.data);
+      bool success = getCommand(line, loopMessage.tag);
+      if (!success) {
+        std::cerr << "invalid command";
+        continue;
+      }
+      getData(line, loopMessage.tag, loopMessage.data);
     }
     
-    if (message.tag == TAG_QUIT) {
-      serverConnection.send(message);
-      serverConnection.receive(message);
+    if (loopMessage.tag == TAG_QUIT) {
+      serverConnection.send(loopMessage);
+      serverConnection.receive(loopMessage);
       break;
     }
-    serverConnection.send(message);
-    serverConnection.receive(message);
-    if (message.tag == TAG_ERR) {
-      std::cout << "error: " << message.data << std::endl;
-      return 1;
+
+    if (!serverConnection.send(loopMessage)) {
+      std::cerr << "sending error";
+    }
+    
+    if (!serverConnection.receive(loopMessage)) {
+      std::cerr << "recieving error";
+    }
+
+    if (loopMessage.tag == TAG_ERR) {
+      std::cerr << loopMessage.data;
     }
   }
+
   return 0;
 }
 
