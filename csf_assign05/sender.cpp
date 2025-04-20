@@ -31,6 +31,25 @@ void getData(const std::string &message, const std::string &command, std::string
   }
 }
 
+bool sendAndReadMessage(Message & message, Connection & serverConnection){
+  if (!serverConnection.send(message)){
+    std::cerr << "failed to send message" << std::endl;
+    return false;
+  }
+
+  if (!serverConnection.receive(message)){
+    std::cerr << "failed to recieve message" << std::endl;
+    return false;
+  }
+
+  if (message.tag == TAG_ERR) {
+    std::cerr << message.data;
+    return false;
+  }
+
+  return true;
+}
+
 int main(int argc, char **argv) {
   if (argc != 4) {
     std::cerr << "Usage: ./sender [server_address] [port] [username]\n";
@@ -63,7 +82,6 @@ int main(int argc, char **argv) {
   if (!serverConnection.receive(login)) {
     std::cerr << "failed to reciever login confirmation" << std::endl;
   }
-
   if (login.tag == TAG_ERR) {
     std::cerr << login.data;
     return 1;

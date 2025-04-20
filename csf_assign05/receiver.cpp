@@ -58,6 +58,7 @@ int main(int argc, char **argv) {
   }
   if (!serverConnection.receive(login)){
     std::cerr << "failed to recieve login confirmation" << std::endl;
+    return 1;
   }
   if (login.tag == TAG_ERR) {
     std::cerr << login.data;
@@ -72,6 +73,7 @@ int main(int argc, char **argv) {
   }
   if (!serverConnection.receive(join)){
     std::cerr << "failed to recieve join confirmation" << std::endl;
+    return 1;
   }
   if (join.tag == TAG_ERR) {
     std::cerr << join.data;
