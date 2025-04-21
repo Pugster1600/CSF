@@ -7,8 +7,16 @@
 #include "connection.h"
 #include "client_util.h"
 
+
+// parsed chat message with room, sender, and content
+struct ChatMessage {
+  std::string room;
+  std::string sender;
+  std::string content;
+};
+
 // method to parse message into room, sender, and string components
-bool readMessage(std::string &data, std::string& room, std::string &sender, std::string &message){
+bool readMessage(std::string &data, ChatMessage& message){
   //1. separate room : sender + message
   size_t pos = data.find(':');
   // message should use : as a delimiter, if not there throw error
@@ -16,7 +24,7 @@ bool readMessage(std::string &data, std::string& room, std::string &sender, std:
     return false;
   }
   // room is in first part of message, room name
-  room = data.substr(0,pos);
+  message.room = data.substr(0,pos);
 
   //2. separate sender : message
   std::string senderAndMessageString = data.substr(pos + 1);
@@ -26,8 +34,8 @@ bool readMessage(std::string &data, std::string& room, std::string &sender, std:
   }
 
   // uses another delimiter in second half of message to extract sender tag and data
-  sender = senderAndMessageString.substr(0,pos);
-  message = senderAndMessageString.substr(pos + 1);
+  message.sender = senderAndMessageString.substr(0,pos);
+  message.content = senderAndMessageString.substr(pos + 1);
   return true;
 }
 
@@ -89,7 +97,7 @@ int main(int argc, char **argv) {
   
   // Main loop to receive and process messages from the server
   //       (which should be tagged with TAG_DELIVERY)
-  while (1) {
+  while (true) {
     Message loopMessage;
     if (!serverConnection.receive(loopMessage)){
       std::cerr << "failed to recieve join confirmation" << std::endl;
@@ -101,17 +109,20 @@ int main(int argc, char **argv) {
       // Continue loop on receive failure
     }
 
-    std::string room;
-    std::string sender;
-    std::string message;
+    if (loopMessage.tag != TAG_DELIVERY) {
+      std::cerr << "Unexpected message tag: " << loopMessage.tag << '\n';
+      continue;
+    }
+
+    ChatMessage chat_message;
     // Parse the received message (expected format: room:sender:message)
-    bool success = readMessage(loopMessage.data, room, sender, message);
+    bool success = readMessage(loopMessage.data, chat_message);
     if (!success){
       std::cerr << "error in reading message";
       continue; // Skip to next message on parse failure
     }
     // Print the sender and message to console
-    std::cout << sender << ": " << message;
+    std::cout << chat_message.sender << ": " << chat_message.content;
   }
   
   return 0;
