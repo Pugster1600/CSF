@@ -24,7 +24,21 @@
 // Client thread functions
 ////////////////////////////////////////////////////////////////////////
 
+struct ClientInfo {
+  Connection *conn;     // Connection object for the client
+  Server *server;       // Pointer to server instance
+  
+  ClientInfo(Connection *conn, Server *server) 
+      : conn(conn), server(server) {}
+};
+
 namespace {
+
+// Process sender client messages
+void chat_with_sender(Connection *conn, Server *server, const std::string &username) {
+
+  
+}
 
 void *worker(void *arg) {
   pthread_detach(pthread_self());
@@ -57,17 +71,57 @@ Server::Server(int port)
 }
 
 Server::~Server() {
-  // TODO: destroy mutex
+  // destroy mutex
+  pthread_mutex_destroy(&m_lock);
+    
+  // Close server socket if open
+  if (m_ssock >= 0) {
+      close(m_ssock);
+  }
+  
+  // Free all Room objects
+  for (auto it = m_rooms.begin(); it != m_rooms.end(); ++it) {
+      delete it->second;
+  }
 }
 
 bool Server::listen() {
   // TODO: use open_listenfd to create the server socket, return true
   //       if successful, false if not
+  char port_str[20]; //so port number is an int, but we need to convert to string for open_listenfd
+  //yeah listenfd takes string port number
+  //need to convert
+  m_ssock = open_listenfd(port_str);
+  return m_ssock >= 0;
 }
 
 void Server::handle_client_requests() {
   // TODO: infinite loop calling accept or Accept, starting a new
   //       pthread for each connected client
+  while(true){
+    int client_fd = Accept(m_ssock, nullptr, nullptr);
+    if (client_fd < 0) {
+      std::cerr << "Error accepting connection" << std::endl;
+      continue;
+    }
+        
+    // Create Connection Object
+    Connection *conn = new Connection(client_fd);
+        
+    // Create ClientInfo to pass to the client thread
+    // need to use aux argument or something
+    ClientInfo *info = new ClientInfo(conn, this);
+        
+    // Create a new thread to handle this client
+    pthread_t thread_id;
+    int rc = pthread_create(&thread_id, nullptr, worker, info); //last is aux
+    if (rc != 0) {
+      std::cerr << "Failed to create thread: " << rc << std::endl;
+      delete conn;
+      delete info;
+    }
+    
+  }
 }
 
 Room *Server::find_or_create_room(const std::string &room_name) {
