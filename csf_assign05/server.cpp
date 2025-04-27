@@ -68,11 +68,14 @@ Server::Server(int port)
   : m_port(port)
   , m_ssock(-1) {
   // TODO: initialize mutex
+  if (pthread_mutex_init(&this -> m_lock, NULL) != 0) {
+    std::cerr << "mutex init failed" << std::endl;
+  }
 }
 
 Server::~Server() {
   // destroy mutex
-  pthread_mutex_destroy(&m_lock);
+  pthread_mutex_destroy(&this -> m_lock);
     
   // Close server socket if open
   if (m_ssock >= 0) {
@@ -127,4 +130,13 @@ void Server::handle_client_requests() {
 Room *Server::find_or_create_room(const std::string &room_name) {
   // TODO: return a pointer to the unique Room object representing
   //       the named chat room, creating a new one if necessary
+  std::map<std::string, Room*>::iterator it = m_rooms.find(room_name);
+  if (this -> m_rooms.find(room_name) != m_rooms.end()) {
+    return this->m_rooms[room_name];
+  } 
+
+  Room * newRoom = new Room(room_name);
+  this->m_rooms[room_name] = newRoom;
+
+  return newRoom;
 }

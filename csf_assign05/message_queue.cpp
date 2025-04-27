@@ -2,17 +2,24 @@
 #include <ctime>
 #include "message_queue.h"
 #include "guard.h"
+#include <iostream>
 
 MessageQueue::MessageQueue() {
   // TODO: initialize the mutex and the semaphore
-  sem_init(&this -> m_avail, 0, 0); 
-  //(sem_t, 0 = shared between threads , 0 initial tokens)
+  if (sem_init(&this -> m_avail, 0, 0) != 0){ //(sem_t, 0 = shared between threads , 0 initial tokens)
+    std::cerr << "semaphore initalization failed" << std::endl;
+  }
 
+  //default initialization (NULL arg)
+  if (pthread_mutex_init(&this -> m_lock, NULL) != 0) {
+    std::cerr << "mutex init failed" << std::endl;
+  }
 }
 
 MessageQueue::~MessageQueue() {
   // TODO: destroy the mutex and the semaphore
   sem_destroy(&this -> m_avail);
+  pthread_mutex_destroy(&this->m_lock);
 }
 
 void MessageQueue::enqueue(Message *msg) {
