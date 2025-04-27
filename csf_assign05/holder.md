@@ -73,3 +73,75 @@ we used COnnection class to get and send data to and from the server
 we are acting like server when testing with netcat
 though netcat can act as client or server
 */
+
+-----------------------
+1. try to get a background on everything
+
+1. messgae broadcast
+
+sending thread iterates through all the users in a room and pushes a message into each message queue
+> this event wakes up the reciever thread, allowing it to dequeue the messages at itsleisure
+
+sem_post increments the semaphore (giving up token)
+> ie signals a resource has become available
+
+sema_wait decreaes the semaphore (taking a token)
+
+binary semaphore
+
+so # of available counters = # of available messages
+> so if we have 0 tokens available, we have 0 available message in the queue
+> when we get a message, sem post
+> when we read a message and thus dequeu, we sem_wait 
+> sem_wait basically sleeps the thread (1 thread = either a receiver or sender client)
+
+when all threads (sender and reciever) have gotten the message ie sem_post, a sender can send a message
+> it does not need to wait for the message to be sem_wait (ie dequeued) and sent to the reciever client
+> but it should not return a status until the message is done being enqueued.
+
+message queue is shared BY ALL THREADS
+> becuase of this, we must use the heap as each thread has its own stack that must not be shared 
+
+> so basically to send a message, a sender will enqueue onto the queue
+> to read a message, a reciever will dequeue. 
+
+use sem_timedwait() instead of just sem_wait to not indefiently block a thread
+
+make critical sections short to improve performance (think of it as us locking out all other threads which we dont want to do for a long time)
+
+server, messagequeue and room objects need synchronization
+
+timing
+1. reciever finishes processing and calls sem_wait for new message
+> if no mesages, semaphore goes to 0 and client thread sleeps 
+2. sender thread recieves a sendall messsage
+> here, the sender should claim a lock to prevent any other threads from doing things (so clients cannot leave/join when we are equeuing or dequeuing)
+> so semaphore to basically keep track of items in the queue (semaphore on queue)
+> locks to prevent mutex (lock on room)
+3. message queue::enqueue calls sem_post to notify a new thing
+> the sender thread still holds the synch primitive on the room!
+> so holding the synch primitive on the room basically prevents say a reciving thread or sneding thread from doing things in the room until lock is release
+> server manages all the messgae queues??
+4a. client threda wakes up as semaphore is now avaialble and sends message to client (ie the program finally gets it and can now print it to terminal)
+> returns 1 after sending the messgae
+4b. happens concurrently with 4a
+> sender thread transmits a status message to the sender and waits for the next message
+
+1. create threads
+> 
+
+synchroniztion primitives
+> p_thread_mutex_init()
+> sem_init();
+
+client vs the actually sender
+> like the client sender just needs to stype "message"
+> whent he sender program gets it, it will send "sendall:message"
+> so basically we are emualting the program it self rather than the user
+> so we know this becuase the command we invoked was NOT ./sender
+> if its ./sender, we are emutaling the user becuase we have the sender running!
+
+gurad is just a wrapper around a mutex 
+> its a class that calls the lock when initalizied
+> when out of scope, destructor invoked which unlocks
+> so responsibility goes to the compiler

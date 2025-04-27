@@ -27,7 +27,7 @@ private:
 
   pthread_mutex_t m_lock; // must be held while accessing queue
   sem_t m_avail;
-  std::deque<Message *> m_messages;
+  std::deque<Message *> m_messages; //queue data structure
 };
 
 #endif // MESSAGE_QUEUE_H
