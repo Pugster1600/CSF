@@ -26,8 +26,8 @@ private:
 
   // These member variables are sufficient for implementing
   // the server operations
-  int m_port;
-  int m_ssock;
+  int m_port; //port #
+  int m_ssock; //fd
   RoomMap m_rooms;
   pthread_mutex_t m_lock;
 };

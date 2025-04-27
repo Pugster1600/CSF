@@ -28,6 +28,7 @@ void Room::remove_member(User *user) {
   // TODO: remove User from the room
   Guard (this -> lock);
   members.erase(user);
+  delete user;
 }
 
 void Room::broadcast_message(const std::string &sender_username, const std::string &message_text) {
@@ -40,4 +41,6 @@ void Room::broadcast_message(const std::string &sender_username, const std::stri
     Message * messageStruct = new Message(TAG_SENDALL, combinedMessage);
     user->mqueue.enqueue(messageStruct);
   }
+
+  //should format be: deliever: room :sender: message
 }

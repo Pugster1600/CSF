@@ -32,12 +32,90 @@ struct ClientInfo {
       : conn(conn), server(server) {}
 };
 
+struct ChatMessage {
+  std::string room;
+  std::string sender;
+  std::string content;
+};
+
+
 namespace {
 
 // Process sender client messages
 void chat_with_sender(Connection *conn, Server *server, const std::string &username) {
+  //1. handle join first
+  Room * room;
+  User * user;
 
-  
+  //2. loop
+  while (1) {
+    Message senderMessage;
+    if (!conn->receive(senderMessage)) {
+      //server error handle
+    }
+
+    std::string command = senderMessage.tag;
+    std::string data = senderMessage.data;
+
+    if (command == TAG_JOIN) { //NOTE: JOIN SHOULD BE THE FIRST REQUEST HANDLED!!
+      //create new user
+      room = server->find_or_create_room(data);
+      user = new User(username);
+      room->add_member(user);
+    } else if (command == TAG_SENDALL) {
+      room -> broadcast_message(user -> username, data);
+    } else if (command == TAG_LEAVE) {
+      room -> remove_member(user);
+    } else if (command == TAG_QUIT) {
+      //destroy connection data
+    }
+
+    Message serverMessage = Message(TAG_OK, "ok");
+    if (!conn -> send(serverMessage)) {
+      //server error handle
+    }
+    //see the command, and do stuff based on the command
+
+
+  }
+}
+
+// Process reciever client messages
+void chat_with_reciever(Connection *conn, Server *server, const std::string &username) {
+  Room * room;
+  User * user;
+
+  //2. loop
+  while (1) {
+    Message senderMessage;
+    if (!conn->receive(senderMessage)) {
+      //server error handle
+    }
+
+    std::string command = senderMessage.tag;
+    std::string data = senderMessage.data;
+
+    if (command == TAG_JOIN) { //NOTE: JOIN SHOULD BE THE FIRST REQUEST HANDLED!!
+      //create new user
+      room = server->find_or_create_room(data);
+      user = new User(username);
+      room->add_member(user);
+    } else if (command == TAG_SENDALL) {
+      room -> broadcast_message(user -> username, data);
+    } else if (command == TAG_LEAVE) {
+      room -> remove_member(user);
+    } else if (command == TAG_QUIT) {
+      //destroy connection data
+    }
+
+    Message serverMessage = Message(TAG_OK, "ok");
+    if (!conn -> send(serverMessage)) {
+      //server error handle
+    }
+    //see the command, and do stuff based on the command
+
+
+  }
 }
 
 void *worker(void *arg) {
@@ -56,15 +134,22 @@ void *worker(void *arg) {
   //       is a good idea)
   // this is Matthew
   // so since we made the auxilliary data structure ClientInfo we need to cast the void argument to that
-  ClientInfo *info = static_cast<ClientInfo*>(arg);
+  ClientInfo *info = static_cast<ClientInfo*>(arg); //assumes that arg1 = Connection, arg2 = Server
   Connection *conn = info->conn;
   Server *server = info->server;
 
   Message initial_msg;
   bool result = conn->receive(initial_msg);
-  if (result == 1){
-    if {initial_msg.tag == "slogin"} { // slogin stands for sender login
+  if (result){
+    //ack reception
+    Message confirmation = Message(TAG_OK, initial_msg.data);
+    conn -> send(confirmation);
 
+    //jump to loop
+    if (initial_msg.tag == TAG_SLOGIN) {
+      chat_with_sender(conn, server, initial_msg.data);
+    } else if (initial_msg.tag == TAG_RLOGIN) {
+      chat_with_reciever(conn, server, initial_msg.data);
     }
   }
 
@@ -104,9 +189,12 @@ Server::~Server() {
 bool Server::listen() {
   // TODO: use open_listenfd to create the server socket, return true
   //       if successful, false if not
-  char port_str[20]; //so port number is an int, but we need to convert to string for open_listenfd
+  //char port_str[20]; //so port number is an int, but we need to convert to string for open_listenfd
   //yeah listenfd takes string port number
   //need to convert
+  std::string str = std::to_string(this -> m_port);  // Convert integer to string
+    
+  const char* port_str = str.c_str();
   m_ssock = open_listenfd(port_str);
   return m_ssock >= 0;
 }
@@ -115,7 +203,7 @@ void Server::handle_client_requests() {
   // TODO: infinite loop calling accept or Accept, starting a new
   //       pthread for each connected client
   while(true){
-    int client_fd = Accept(m_ssock, nullptr, nullptr);
+    int client_fd = Accept(m_ssock, nullptr, nullptr); //something wrong here
     if (client_fd < 0) {
       std::cerr << "Error accepting connection" << std::endl;
       continue;
@@ -130,13 +218,13 @@ void Server::handle_client_requests() {
         
     // Create a new thread to handle this client
     pthread_t thread_id;
+    //thread id, attributes, while 1, arguments
     int rc = pthread_create(&thread_id, nullptr, worker, info); //last is aux
     if (rc != 0) {
       std::cerr << "Failed to create thread: " << rc << std::endl;
       delete conn;
       delete info;
     }
-    
   }
 }
 
@@ -144,7 +232,7 @@ Room *Server::find_or_create_room(const std::string &room_name) {
   // TODO: return a pointer to the unique Room object representing
   //       the named chat room, creating a new one if necessary
   std::map<std::string, Room*>::iterator it = m_rooms.find(room_name);
-  if (this -> m_rooms.find(room_name) != m_rooms.end()) {
+  if (it != m_rooms.end()) {
     return this->m_rooms[room_name];
   } 
 
