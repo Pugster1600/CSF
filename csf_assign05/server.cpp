@@ -54,6 +54,19 @@ void *worker(void *arg) {
   //       receiver, communicate with the client (implementing
   //       separate helper functions for each of these possibilities
   //       is a good idea)
+  // this is Matthew
+  // so since we made the auxilliary data structure ClientInfo we need to cast the void argument to that
+  ClientInfo *info = static_cast<ClientInfo*>(arg);
+  Connection *conn = info->conn;
+  Server *server = info->server;
+
+  Message initial_msg;
+  bool result = conn->receive(initial_msg);
+  if (result == 1){
+    if {initial_msg.tag == "slogin"} { // slogin stands for sender login
+
+    }
+  }
 
   return nullptr;
 }
