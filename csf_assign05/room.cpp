@@ -42,5 +42,5 @@ void Room::broadcast_message(const std::string &sender_username, const std::stri
     user->mqueue.enqueue(messageStruct);
   }
 
-  //should format be: deliever: room :sender: message
+  //should format be: deliever: room :sender: message??
 }

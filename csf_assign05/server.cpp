@@ -38,12 +38,11 @@ struct ChatMessage {
   std::string content;
 };
 
-
 namespace {
-
 
 void handle_message(Connection* conn, Server* server, User* user, Room* room, 
   const Message& msg, bool is_sender) {
+
   std::string command = msg.tag;
   std::string data = msg.data;
 
@@ -54,20 +53,23 @@ void handle_message(Connection* conn, Server* server, User* user, Room* room,
 
   if (command == TAG_JOIN) {
     if (room) {
-    conn->send(Message(TAG_ERR, "Already in a room"));
-    return;
+      conn->send(Message(TAG_ERR, "Already in a room"));
+      return;
     }
     if (data.empty()) {
       conn->send(Message(TAG_ERR, "Room name cannot be empty"));
-    return;
-  }
-  room = server->find_or_create_room(data);
-  room->add_member(user);
-  conn->send(Message(TAG_OK, "Joined room: " + data));
+      return;
+    }
+
+    room = server->find_or_create_room(data);
+    room->add_member(user);
+    conn->send(Message(TAG_OK, "Joined room: " + data));
+
   } else if (command == TAG_SENDALL && is_sender) {
     room->broadcast_message(user->username, data);
     conn->send(Message(TAG_OK, "Message sent"));
   } else if (command == TAG_LEAVE) {
+
     room->remove_member(user);
     room = nullptr;
     conn->send(Message(TAG_OK, "Left room"));
@@ -75,51 +77,32 @@ void handle_message(Connection* conn, Server* server, User* user, Room* room,
     if (room) {
       room->remove_member(user);
     }
-  throw std::runtime_error("Client quit");
+    throw std::runtime_error("Client quit");
   } else {
     conn->send(Message(TAG_ERR, "Unknown command"));
   }
 }
+
 // Process sender client messages
 void chat_with_sender(Connection *conn, Server *server, const std::string &username) {
   //1. handle join first
-  Room * room;
-  User * user;
+  Room * room = nullptr;
+  User * user = new User(username);
 
   //2. loop
   while (1) {
     Message senderMessage;
     if (!conn->receive(senderMessage)) {
       //server error handle
+      std::cerr << "failed to recieve";
+      continue;
     }
 
-    std::string command = senderMessage.tag;
-    std::string data = senderMessage.data;
-
-    if (command == TAG_JOIN) { //NOTE: JOIN SHOULD BE THE FIRST REQUEST HANDLED!!
-      //create new user
-      room = server->find_or_create_room(data);
-      user = new User(username);
-      room->add_member(user);
-    } else if (command == TAG_SENDALL) {
-      room -> broadcast_message(user -> username, data);
-    } else if (command == TAG_LEAVE) {
-      room -> remove_member(user);
-    } else if (command == TAG_QUIT) {
-      //destroy connection data
-    }
-
-    Message serverMessage = Message(TAG_OK, "ok");
-    if (!conn -> send(serverMessage)) {
-      //server error handle
-    }
-    //see the command, and do stuff based on the command
-
-
+    handle_message(conn, server, user, room, senderMessage, true);
   }
   // Clean up
   if (room && user) {
-    room->remove_user(user);
+    room->remove_member(user);
   }
   delete user;
 }
@@ -128,7 +111,7 @@ void chat_with_sender(Connection *conn, Server *server, const std::string &usern
 void chat_with_receiver(Connection *conn, Server *server, const std::string &username) {
   Room * room;
   User * user = new User(username);
-  bool initial_message = false;
+  bool initial_message = true;
 
   while (true) {
     // Handle initial message (must be TAG_JOIN)
@@ -141,7 +124,7 @@ void chat_with_receiver(Connection *conn, Server *server, const std::string &use
         break;
       }
 
-      handle_message(conn, server, user.get(), room, msg, false);
+      handle_message(conn, server, user, room, msg, false);
       if (!room) {
         // Join failed (e.g., not TAG_JOIN or invalid room name)
         break;
@@ -151,19 +134,19 @@ void chat_with_receiver(Connection *conn, Server *server, const std::string &use
     }
 
     // Process queued messages from mqueue
-    while (!user->mqueue.is_empty()) {
-      Message queued_msg = user->mqueue.dequeue();
-      if (!conn->send(queued_msg)) {
-        if (room) {
-          room->remove_member(user);
-        }
-      }
-    }
+    //while (!user->mqueue.m_messages.is_empty()) { //cant do this becaues private field
+    //  Message * queued_msg = user->mqueue.dequeue();
+    //  if (!conn->send(*queued_msg)) {
+    //    if (room) {
+    //      room->remove_member(user);
+    //    }
+    //  }
+    //}
 
     // Check for client commands
     Message msg;
     if (conn->receive(msg)) {
-      handle_message(conn, server, user.get(), room, msg, false);
+      handle_message(conn, server, user, room, msg, false);
       if (msg.tag == TAG_QUIT || (msg.tag == TAG_LEAVE && !room)) {
         break;
       }
@@ -180,7 +163,7 @@ void chat_with_receiver(Connection *conn, Server *server, const std::string &use
 
   // Clean up
   if (room && user) {
-    room->remove_user(user);
+    room->remove_member(user);
   }
   delete user;
 }
@@ -209,19 +192,17 @@ void *worker(void *arg) {
   bool result = conn->receive(initial_msg);
   if (result){
     //ack reception
-    Message confirmation = Message(TAG_OK, initial_msg.data);
+    std::string replyMessage = std::string("logged in as ") + std::string(initial_msg.data);
+    Message confirmation = Message(TAG_OK, replyMessage);
     conn -> send(confirmation);
-
     //jump to loop
     if (initial_msg.tag == TAG_SLOGIN) {
-      
       chat_with_sender(conn, server, initial_msg.data);
     } else if (initial_msg.tag == TAG_RLOGIN) {
       chat_with_receiver(conn, server, initial_msg.data);
     } else {
       conn->send(Message("error", "Invalid login message"));
     }
-    
   }
   delete conn;
   delete info;
