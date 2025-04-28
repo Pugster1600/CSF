@@ -41,6 +41,45 @@ struct ChatMessage {
 
 namespace {
 
+
+void handle_message(Connection* conn, Server* server, User* user, Room* room, 
+  const Message& msg, bool is_sender) {
+  std::string command = msg.tag;
+  std::string data = msg.data;
+
+  if (!room && command != TAG_JOIN) {
+    conn->send(Message(TAG_ERR, "Must join a room first"));
+    return;
+  }
+
+  if (command == TAG_JOIN) {
+    if (room) {
+    conn->send(Message(TAG_ERR, "Already in a room"));
+    return;
+    }
+    if (data.empty()) {
+      conn->send(Message(TAG_ERR, "Room name cannot be empty"));
+    return;
+  }
+  room = server->find_or_create_room(data);
+  room->add_member(user);
+  conn->send(Message(TAG_OK, "Joined room: " + data));
+  } else if (command == TAG_SENDALL && is_sender) {
+    room->broadcast_message(user->username, data);
+    conn->send(Message(TAG_OK, "Message sent"));
+  } else if (command == TAG_LEAVE) {
+    room->remove_member(user);
+    room = nullptr;
+    conn->send(Message(TAG_OK, "Left room"));
+  } else if (command == TAG_QUIT) {
+    if (room) {
+      room->remove_member(user);
+    }
+  throw std::runtime_error("Client quit");
+  } else {
+    conn->send(Message(TAG_ERR, "Unknown command"));
+  }
+}
 // Process sender client messages
 void chat_with_sender(Connection *conn, Server *server, const std::string &username) {
   //1. handle join first
@@ -78,15 +117,37 @@ void chat_with_sender(Connection *conn, Server *server, const std::string &usern
 
 
   }
+  // Clean up
+  if (room && user) {
+    room->remove_user(user);
+  }
+  delete user;
 }
 
 // Process reciever client messages
-void chat_with_reciever(Connection *conn, Server *server, const std::string &username) {
+void chat_with_receiver(Connection *conn, Server *server, const std::string &username) {
   Room * room;
   User * user;
+  bool joined = false;
 
   //2. loop
   while (1) {
+
+    // Check for any pending messages in the user's queue
+    if (joined) {
+      // Process all pending messages in the queue
+      while (!user->mqueue.is_empty()) {
+        Message pending_msg = user->mqueue.dequeue();
+        // Send the queued message to the client
+        if (!conn->send(pending_msg)) {
+          // Connection error, break out of the loop
+          delete pending_msg;
+          room->remove_member(conn->user);
+          running = false;
+          break;
+        }
+      }
+    }
     Message senderMessage;
     if (!conn->receive(senderMessage)) {
       //server error handle
@@ -102,10 +163,14 @@ void chat_with_reciever(Connection *conn, Server *server, const std::string &use
       room->add_member(user);
     } else if (command == TAG_SENDALL) {
       room -> broadcast_message(user -> username, data);
+      conn->send(Message("ok", "Message sent"));
     } else if (command == TAG_LEAVE) {
       room -> remove_member(user);
     } else if (command == TAG_QUIT) {
       //destroy connection data
+      break;
+    } else {
+      conn->send(Message("error", "Unknown command"));
     }
 
     Message serverMessage = Message(TAG_OK, "ok");
@@ -116,6 +181,11 @@ void chat_with_reciever(Connection *conn, Server *server, const std::string &use
 
 
   }
+  // Clean up
+  if (room && user) {
+    room->remove_user(user);
+  }
+  delete user;
 }
 
 void *worker(void *arg) {
@@ -147,12 +217,17 @@ void *worker(void *arg) {
 
     //jump to loop
     if (initial_msg.tag == TAG_SLOGIN) {
+      
       chat_with_sender(conn, server, initial_msg.data);
     } else if (initial_msg.tag == TAG_RLOGIN) {
-      chat_with_reciever(conn, server, initial_msg.data);
+      chat_with_receiver(conn, server, initial_msg.data);
+    } else {
+      conn->send(Message("error", "Invalid login message"));
     }
+    
   }
-
+  delete conn;
+  delete info;
   return nullptr;
 }
 
@@ -231,6 +306,7 @@ void Server::handle_client_requests() {
 Room *Server::find_or_create_room(const std::string &room_name) {
   // TODO: return a pointer to the unique Room object representing
   //       the named chat room, creating a new one if necessary
+  Guard guard(m_lock); //for m_rooms
   std::map<std::string, Room*>::iterator it = m_rooms.find(room_name);
   if (it != m_rooms.end()) {
     return this->m_rooms[room_name];
