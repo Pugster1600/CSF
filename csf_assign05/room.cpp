@@ -35,12 +35,11 @@ void Room::broadcast_message(const std::string &sender_username, const std::stri
   // TODO: send a message to every (receiver) User in the room
   //delivery:room:sender:message
   std::string combinedMessage = this->room_name + ":" + sender_username + ":" + message_text;
-  Guard (this -> lock);
+  Guard guard(this -> lock);
 
   //add this to the queue
   for (User * user : members) {
     Message * messageStruct = new Message(TAG_DELIVERY, combinedMessage);
     user->mqueue.enqueue(messageStruct);
   }
-
 }
