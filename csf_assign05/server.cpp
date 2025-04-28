@@ -130,6 +130,9 @@ void chat_with_sender(Connection *conn, Server *server, User * user) {
         conn->send(Message(TAG_ERR, "Room name cannot be empty"));
         return;
       }
+      if (data.length() >= 2) {
+        data = str.substr(0, str.length() - 2);
+      }   
       room = server->find_or_create_room(data);
       room->add_member(user);
       conn->send(Message(TAG_OK, "Joined room: " + data));
@@ -173,8 +176,10 @@ void chat_with_receiver(Connection *conn, Server *server, User * user) {
   if (recieverMessage.tag != TAG_JOIN) {
     conn->send(Message(TAG_ERR, "Must join a room first"));
     return;
-  }
-
+  } 
+  if (recieverMessage.data.length() >= 2) {
+    receiverMessage.data = recieverMessage.data.substr(0, recieverMessage.data.length() - 2);
+  } 
   room = server -> find_or_create_room(recieverMessage.data);
   room->add_member(user);
   conn->send(Message(TAG_OK, "Joined room: " + recieverMessage.data));
@@ -219,11 +224,16 @@ void *worker(void *arg) {
     Message confirmation = Message(TAG_OK, replyMessage);
     conn -> send(confirmation);
     //jump to loop
+    std::string username = initial_msg.data;
+
+    if (username.length() >= 2) {
+      username = username.substr(0, username.length() - 2);
+    } 
     if (initial_msg.tag == TAG_SLOGIN) {
-      user = new User(initial_msg.data);
+      user = new User(username);
       chat_with_sender(conn, server, user);
     } else if (initial_msg.tag == TAG_RLOGIN) {
-      user = new User(initial_msg.data);
+      user = new User(username);
       chat_with_receiver(conn, server, user);
     } else {
       conn->send(Message("error", "Invalid login message"));
@@ -243,7 +253,7 @@ Server::Server(int port)
   , m_ssock(-1) {
   // TODO: initialize mutex
   if (pthread_mutex_init(&this -> m_lock, NULL) != 0) {
-    std::cerr << "mutex init failed";
+    std::cerr << "mutex init failed" << std::endl;
   }
 }
 
@@ -281,7 +291,7 @@ void Server::handle_client_requests() {
   while(true){
     int client_fd = Accept(m_ssock, nullptr, nullptr); //something wrong here
     if (client_fd < 0) {
-      std::cerr << "Error accepting connection";
+      std::cerr << "Error accepting connection" << std::endl;
       continue;
     }
         
@@ -297,11 +307,10 @@ void Server::handle_client_requests() {
     //thread id, attributes, while 1, arguments
     int rc = pthread_create(&thread_id, nullptr, worker, info); //last is aux
     if (rc != 0) {
-      std::cerr << "Failed to create thread: " << rc;
+      std::cerr << "Failed to create thread: " << rc << std::endl;
       delete conn;
       delete info;
     }
-  }
 }
 
 Room *Server::find_or_create_room(const std::string &room_name) {
