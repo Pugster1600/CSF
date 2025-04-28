@@ -73,7 +73,7 @@ void handle_message(Connection* conn, Server* server, User* user, Room* room,
 
     room = server->find_or_create_room(data);
     room->add_member(user);
-    conn->send(Message(TAG_OK, "Joined room: " + data));
+    conn->send(Message(TAG_OK, "Joined room " + data));
 
   } else if (command == TAG_SENDALL && is_sender) { //3. handle sendall from sender
     room->broadcast_message(user->username, data);
@@ -130,8 +130,8 @@ void chat_with_sender(Connection *conn, Server *server, User * user) {
         conn->send(Message(TAG_ERR, "Room name cannot be empty"));
         return;
       }
-      if (data.length() >= 2) {
-        data = str.substr(0, str.length() - 2);
+      if (data.length() >= 1) {
+        data = data.substr(0, data.length() - 1);
       }   
       room = server->find_or_create_room(data);
       room->add_member(user);
@@ -177,8 +177,8 @@ void chat_with_receiver(Connection *conn, Server *server, User * user) {
     conn->send(Message(TAG_ERR, "Must join a room first"));
     return;
   } 
-  if (recieverMessage.data.length() >= 2) {
-    receiverMessage.data = recieverMessage.data.substr(0, recieverMessage.data.length() - 2);
+  if (recieverMessage.data.length() >= 1) {
+    recieverMessage.data = recieverMessage.data.substr(0, recieverMessage.data.length() - 1);
   } 
   room = server -> find_or_create_room(recieverMessage.data);
   room->add_member(user);
@@ -220,14 +220,17 @@ void *worker(void *arg) {
   bool result = conn->receive(initial_msg);
   if (result){
     //ack reception
-    std::string replyMessage = std::string("logged in as ") + std::string(initial_msg.data);
+    std::string replyMessage = "logged in as " + initial_msg.data;
+    //std::cout << replyMessage;
     Message confirmation = Message(TAG_OK, replyMessage);
-    conn -> send(confirmation);
+    if (!conn -> send(confirmation)) {
+      std::cerr << "error sending back login in confirmation";
+    }
     //jump to loop
     std::string username = initial_msg.data;
 
-    if (username.length() >= 2) {
-      username = username.substr(0, username.length() - 2);
+    if (username.length() >= 1) {
+      username = username.substr(0, username.length() - 1);
     } 
     if (initial_msg.tag == TAG_SLOGIN) {
       user = new User(username);
@@ -305,12 +308,12 @@ void Server::handle_client_requests() {
     // Create a new thread to handle this client
     pthread_t thread_id;
     //thread id, attributes, while 1, arguments
-    int rc = pthread_create(&thread_id, nullptr, worker, info); //last is aux
+    int rc = pthread_create(&thread_id, nullptr, worker, static_cast<void*>(info)); //last is aux
     if (rc != 0) {
       std::cerr << "Failed to create thread: " << rc << std::endl;
-      delete conn;
       delete info;
     }
+  }
 }
 
 Room *Server::find_or_create_room(const std::string &room_name) {

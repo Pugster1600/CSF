@@ -158,3 +158,5 @@ sender writes to a socket
 server talks to client!! so not std::err only send stuff via the sockets
 
 //scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign05/solution.zip .
+
+set args 33333

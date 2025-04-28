@@ -128,7 +128,10 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-//./receiver localhost 33333 alice cafe
+//./receiver localhost 33333 bob cafe
 //nc -l -p 33333
 //scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign05/solution.zip .
 //delivery:cafe:sender:test message
+
+//issue: we are sending something wrong for some reason
+//we are sending '\n'

@@ -146,6 +146,8 @@ int main(int argc, char **argv) {
   return 0;
 }
 
+//./sender localhost 12333 alice
 //./sender localhost 33333 alice
 //nc -l -p 33333
 //scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign05/solution.zip .
+//set breakpoint in the worker
