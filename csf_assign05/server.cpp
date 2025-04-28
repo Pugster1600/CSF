@@ -127,60 +127,57 @@ void chat_with_sender(Connection *conn, Server *server, const std::string &usern
 // Process reciever client messages
 void chat_with_receiver(Connection *conn, Server *server, const std::string &username) {
   Room * room;
-  User * user;
-  bool joined = false;
+  User * user = new User(username);
+  bool initial_message = false;
 
-  //2. loop
-  while (1) {
+  while (true) {
+    // Handle initial message (must be TAG_JOIN)
+    if (initial_message) {
+      Message msg;
+      if (!conn->receive(msg)) {
+        if (conn->get_last_result() == Connection::INVALID_MSG) {
+          conn->send(Message(TAG_ERR, "Invalid message format"));
+        }
+        break;
+      }
 
-    // Check for any pending messages in the user's queue
-    if (joined) {
-      // Process all pending messages in the queue
-      while (!user->mqueue.is_empty()) {
-        Message pending_msg = user->mqueue.dequeue();
-        // Send the queued message to the client
-        if (!conn->send(pending_msg)) {
-          // Connection error, break out of the loop
-          delete pending_msg;
-          room->remove_member(conn->user);
-          running = false;
-          break;
+      handle_message(conn, server, user.get(), room, msg, false);
+      if (!room) {
+        // Join failed (e.g., not TAG_JOIN or invalid room name)
+        break;
+      }
+      initial_message = false;
+      continue;
+    }
+
+    // Process queued messages from mqueue
+    while (!user->mqueue.is_empty()) {
+      Message queued_msg = user->mqueue.dequeue();
+      if (!conn->send(queued_msg)) {
+        if (room) {
+          room->remove_member(user);
         }
       }
     }
-    Message senderMessage;
-    if (!conn->receive(senderMessage)) {
-      //server error handle
-    }
 
-    std::string command = senderMessage.tag;
-    std::string data = senderMessage.data;
-
-    if (command == TAG_JOIN) { //NOTE: JOIN SHOULD BE THE FIRST REQUEST HANDLED!!
-      //create new user
-      room = server->find_or_create_room(data);
-      user = new User(username);
-      room->add_member(user);
-    } else if (command == TAG_SENDALL) {
-      room -> broadcast_message(user -> username, data);
-      conn->send(Message("ok", "Message sent"));
-    } else if (command == TAG_LEAVE) {
-      room -> remove_member(user);
-    } else if (command == TAG_QUIT) {
-      //destroy connection data
-      break;
+    // Check for client commands
+    Message msg;
+    if (conn->receive(msg)) {
+      handle_message(conn, server, user.get(), room, msg, false);
+      if (msg.tag == TAG_QUIT || (msg.tag == TAG_LEAVE && !room)) {
+        break;
+      }
     } else {
-      conn->send(Message("error", "Unknown command"));
+      if (conn->get_last_result() == Connection::INVALID_MSG) {
+        conn->send(Message(TAG_ERR, "Invalid message format"));
+      } else {
+        // Connection error or EOF
+        room->remove_member(user);
+        break;
+      }
     }
-
-    Message serverMessage = Message(TAG_OK, "ok");
-    if (!conn -> send(serverMessage)) {
-      //server error handle
-    }
-    //see the command, and do stuff based on the command
-
-
   }
+
   // Clean up
   if (room && user) {
     room->remove_user(user);
