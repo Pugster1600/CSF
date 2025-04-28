@@ -64,6 +64,7 @@ bool Connection::send(const Message &msg) {
     //std::cout <<"no new line character" << std::endl;
     message += '\n';
   }
+  
   //message += '\n';
   // write message to file descriptor using outside method and unbuffered I/O
   ssize_t msgWrite = rio_writen(this->m_fd, message.c_str(), message.size()); //write n bytes NOT buffered

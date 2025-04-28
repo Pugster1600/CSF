@@ -18,15 +18,26 @@ MessageQueue::MessageQueue() {
 
 MessageQueue::~MessageQueue() {
   // TODO: destroy the mutex and the semaphore
+  {
+    Guard g(m_lock);
+    for (Message * m : m_messages) {
+      delete m;
+    }
+  }
+
   sem_destroy(&this -> m_avail);
   pthread_mutex_destroy(&this->m_lock);
 }
 
 void MessageQueue::enqueue(Message *msg) {
   // -> using guards to always unlock when out of scope pthread_mutex_lock(&this -> m_lock);
-  Guard(this -> m_lock);
-  // TODO: put the specified message on the queue
-  m_messages.push_back(msg);
+  
+  {
+    Guard(this -> m_lock);
+    // TODO: put the specified message on the queue
+    m_messages.push_back(msg);
+  }
+
   sem_post(&this -> m_avail);
 
   // be sure to notify any thread waiting for a message to be
@@ -55,8 +66,11 @@ Message *MessageQueue::dequeue() {
   }
 
   //lock only when message becomes available to prevent locking while blocking
-  Guard(this -> m_lock); //hold mutex for the messagequeue itself
-  msg = m_messages.front();
-  m_messages.pop_front();
+  
+  {
+    Guard(this -> m_lock); //hold mutex for the messagequeue itself
+    msg = m_messages.front();
+    m_messages.pop_front();
+  } 
   return msg;
 }

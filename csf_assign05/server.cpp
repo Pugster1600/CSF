@@ -79,9 +79,9 @@ void handle_message(Connection* conn, Server* server, User* user, Room* room,
     room->broadcast_message(user->username, data);
     conn->send(Message(TAG_OK, "Message sent"));
   } else if (command == TAG_LEAVE) { //4. handle leave from both sender and reciever
+    conn->send(Message(TAG_OK, "Left room")); 
     room->remove_member(user);
     room = nullptr;
-    conn->send(Message(TAG_OK, "Left room")); 
   } else if (command == TAG_QUIT) { //5. handle quit from both sender and reciever
     if (room) {
       room->remove_member(user);
