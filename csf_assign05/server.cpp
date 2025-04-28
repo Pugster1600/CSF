@@ -243,7 +243,7 @@ Server::Server(int port)
   , m_ssock(-1) {
   // TODO: initialize mutex
   if (pthread_mutex_init(&this -> m_lock, NULL) != 0) {
-    std::cerr << "mutex init failed" << std::endl;
+    std::cerr << "mutex init failed";
   }
 }
 
@@ -281,7 +281,7 @@ void Server::handle_client_requests() {
   while(true){
     int client_fd = Accept(m_ssock, nullptr, nullptr); //something wrong here
     if (client_fd < 0) {
-      std::cerr << "Error accepting connection" << std::endl;
+      std::cerr << "Error accepting connection";
       continue;
     }
         
@@ -297,7 +297,7 @@ void Server::handle_client_requests() {
     //thread id, attributes, while 1, arguments
     int rc = pthread_create(&thread_id, nullptr, worker, info); //last is aux
     if (rc != 0) {
-      std::cerr << "Failed to create thread: " << rc << std::endl;
+      std::cerr << "Failed to create thread: " << rc;
       delete conn;
       delete info;
     }
