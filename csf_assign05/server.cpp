@@ -27,10 +27,18 @@
 struct ClientInfo {
   Connection *conn;     // Connection object for the client
   Server *server;       // Pointer to server instance
+  User* user;
   
-  ClientInfo(Connection *conn, Server *server) 
-      : conn(conn), server(server) {}
+  ClientInfo(Connection *_conn, Server *_server, User *_user) 
+      : conn(_conn), server(_server),  user(_user){}
+
+  ~ClientInfo() {
+    delete conn;
+    delete user;
+  }
 };
+
+
 
 struct ChatMessage {
   std::string room;
@@ -46,11 +54,13 @@ void handle_message(Connection* conn, Server* server, User* user, Room* room,
   std::string command = msg.tag;
   std::string data = msg.data;
 
+  //1. initial command must be join
   if (!room && command != TAG_JOIN) {
     conn->send(Message(TAG_ERR, "Must join a room first"));
     return;
   }
 
+  //2. handle join from both sender and reciever
   if (command == TAG_JOIN) {
     if (room) {
       conn->send(Message(TAG_ERR, "Already in a room"));
@@ -65,107 +75,119 @@ void handle_message(Connection* conn, Server* server, User* user, Room* room,
     room->add_member(user);
     conn->send(Message(TAG_OK, "Joined room: " + data));
 
-  } else if (command == TAG_SENDALL && is_sender) {
+  } else if (command == TAG_SENDALL && is_sender) { //3. handle sendall from sender
     room->broadcast_message(user->username, data);
     conn->send(Message(TAG_OK, "Message sent"));
-  } else if (command == TAG_LEAVE) {
-
+  } else if (command == TAG_LEAVE) { //4. handle leave from both sender and reciever
     room->remove_member(user);
     room = nullptr;
-    conn->send(Message(TAG_OK, "Left room"));
-  } else if (command == TAG_QUIT) {
+    conn->send(Message(TAG_OK, "Left room")); 
+  } else if (command == TAG_QUIT) { //5. handle quit from both sender and reciever
     if (room) {
       room->remove_member(user);
     }
     throw std::runtime_error("Client quit");
-  } else {
+  } else { //6. unknown command
     conn->send(Message(TAG_ERR, "Unknown command"));
   }
 }
 
 // Process sender client messages
-void chat_with_sender(Connection *conn, Server *server, const std::string &username) {
+void chat_with_sender(Connection *conn, Server *server, User * user) {
   //1. handle join first
   Room * room = nullptr;
-  User * user = new User(username);
 
   //2. loop
   while (1) {
+    //3. read message from ./sender
     Message senderMessage;
     if (!conn->receive(senderMessage)) {
       //server error handle
-      std::cerr << "failed to recieve";
-      continue;
+      if (conn->get_last_result() == Connection::INVALID_MSG) {
+        senderMessage = Message(TAG_ERR, "Invalid message");
+        conn->send(senderMessage);
+      }
+      return;
     }
 
-    handle_message(conn, server, user, room, senderMessage, true);
+    //4. handle message from sender
+    std::string command = senderMessage.tag;
+    std::string data = senderMessage.data;
+
+    //5. initial command must be join
+    if (!room && command != TAG_JOIN) {
+      conn->send(Message(TAG_ERR, "Must join a room first"));
+      return;
+    }
+
+    //2. handle join
+    if (command == TAG_JOIN) {
+      if (room) {
+        conn->send(Message(TAG_ERR, "Already in a room"));
+        return;
+      }
+      if (data.empty()) {
+        conn->send(Message(TAG_ERR, "Room name cannot be empty"));
+        return;
+      }
+      room = server->find_or_create_room(data);
+      room->add_member(user);
+      conn->send(Message(TAG_OK, "Joined room: " + data));
+
+    } else if (command == TAG_SENDALL) { //3. handle sendall
+      room->broadcast_message(user->username, data);
+      conn->send(Message(TAG_OK, "Message sent"));
+    } else if (command == TAG_LEAVE) { //4. handle leave
+      if (room) {
+        room->remove_member(user);
+        room = nullptr;
+        conn->send(Message(TAG_OK, "Left room")); 
+      } else {
+        conn->send(Message(TAG_ERR, "not in a room!"));
+      }
+      
+    } else if (command == TAG_QUIT) { //5. handle quit
+      if (room) {
+        room->remove_member(user);
+      } 
+      conn->send(Message(TAG_OK, "QUIT"));
+    } else { //6. unknown command
+      conn->send(Message(TAG_ERR, "Unknown command"));
+    }
   }
-  // Clean up
-  if (room && user) {
-    room->remove_member(user);
-  }
-  delete user;
 }
 
 // Process reciever client messages
-void chat_with_receiver(Connection *conn, Server *server, const std::string &username) {
-  Room * room;
-  User * user = new User(username);
-  bool initial_message = true;
+void chat_with_receiver(Connection *conn, Server *server, User * user) {
+  Room * room = nullptr;
 
-  while (true) {
-    // Handle initial message (must be TAG_JOIN)
-    if (initial_message) {
-      Message msg;
-      if (!conn->receive(msg)) {
-        if (conn->get_last_result() == Connection::INVALID_MSG) {
-          conn->send(Message(TAG_ERR, "Invalid message format"));
-        }
-        break;
-      }
+  //1. join room -> only going to recieve once so need to do this outside the loop
+  Message recieverMessage;
+  if (!conn->receive(recieverMessage)) {
+    //server error handle
+    if (conn->get_last_result() == Connection::INVALID_MSG) {
+      conn->send(Message(TAG_ERR, "Invalid message format"));
+    }
+  }
 
-      handle_message(conn, server, user, room, msg, false);
-      if (!room) {
-        // Join failed (e.g., not TAG_JOIN or invalid room name)
-        break;
-      }
-      initial_message = false;
+  if (recieverMessage.tag != TAG_JOIN) {
+    conn->send(Message(TAG_ERR, "Must join a room first"));
+    return;
+  }
+
+  room = server -> find_or_create_room(recieverMessage.data);
+  room->add_member(user);
+  conn->send(Message(TAG_OK, "Joined room: " + recieverMessage.data));
+
+  while (1) {
+    //get message
+    Message * msg = user->mqueue.dequeue();
+    if (!msg) { //queue empty
       continue;
     }
 
-    // Process queued messages from mqueue
-    //while (!user->mqueue.m_messages.is_empty()) { //cant do this becaues private field
-    //  Message * queued_msg = user->mqueue.dequeue();
-    //  if (!conn->send(*queued_msg)) {
-    //    if (room) {
-    //      room->remove_member(user);
-    //    }
-    //  }
-    //}
-
-    // Check for client commands
-    Message msg;
-    if (conn->receive(msg)) {
-      handle_message(conn, server, user, room, msg, false);
-      if (msg.tag == TAG_QUIT || (msg.tag == TAG_LEAVE && !room)) {
-        break;
-      }
-    } else {
-      if (conn->get_last_result() == Connection::INVALID_MSG) {
-        conn->send(Message(TAG_ERR, "Invalid message format"));
-      } else {
-        // Connection error or EOF
-        room->remove_member(user);
-        break;
-      }
-    }
+    conn -> send(*msg);
   }
-
-  // Clean up
-  if (room && user) {
-    room->remove_member(user);
-  }
-  delete user;
 }
 
 void *worker(void *arg) {
@@ -184,9 +206,10 @@ void *worker(void *arg) {
   //       is a good idea)
   // this is Matthew
   // so since we made the auxilliary data structure ClientInfo we need to cast the void argument to that
-  ClientInfo *info = static_cast<ClientInfo*>(arg); //assumes that arg1 = Connection, arg2 = Server
+  ClientInfo *info = static_cast<ClientInfo*>(arg); //assumes that arg1 = Connection, arg2 = Server, arg3 = User
   Connection *conn = info->conn;
   Server *server = info->server;
+  User *user = info->user;
 
   Message initial_msg;
   bool result = conn->receive(initial_msg);
@@ -197,15 +220,15 @@ void *worker(void *arg) {
     conn -> send(confirmation);
     //jump to loop
     if (initial_msg.tag == TAG_SLOGIN) {
-      chat_with_sender(conn, server, initial_msg.data);
+      user = new User(initial_msg.data);
+      chat_with_sender(conn, server, user);
     } else if (initial_msg.tag == TAG_RLOGIN) {
-      chat_with_receiver(conn, server, initial_msg.data);
+      user = new User(initial_msg.data);
+      chat_with_receiver(conn, server, user);
     } else {
       conn->send(Message("error", "Invalid login message"));
     }
   }
-  delete conn;
-  delete info;
   return nullptr;
 }
 
@@ -267,7 +290,7 @@ void Server::handle_client_requests() {
         
     // Create ClientInfo to pass to the client thread
     // need to use aux argument or something
-    ClientInfo *info = new ClientInfo(conn, this);
+    ClientInfo *info = new ClientInfo(conn, this, nullptr);
         
     // Create a new thread to handle this client
     pthread_t thread_id;

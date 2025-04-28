@@ -145,3 +145,16 @@ gurad is just a wrapper around a mutex
 > its a class that calls the lock when initalizied
 > when out of scope, destructor invoked which unlocks
 > so responsibility goes to the compiler
+
+reciever reads from a socket
+> the server will dequeue each message
+> it will then write to the socket (so the reciever can read it)
+
+
+sender writes to a socket
+> server will read the socket for the message
+> the server will enqueue each message (so the reciever can read it)
+
+server talks to client!! so not std::err only send stuff via the sockets
+
+//scp jshi61@ugradx.cs.jhu.edu:~/CSF/csf_assign05/solution.zip .
