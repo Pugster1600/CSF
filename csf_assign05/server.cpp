@@ -47,9 +47,9 @@ void chat_with_sender(ClientInfo * info) {
   Connection *conn = info->conn;
   Server *server = info->server;
   User * user = info->user;
-  //2. loop
+
   while (1) {
-    //3. read message from ./sender
+    //2. read message from ./sender
     Message senderMessage;
     if (!conn->receive(senderMessage)) {
       //server error handle
@@ -60,11 +60,11 @@ void chat_with_sender(ClientInfo * info) {
       return;
     }
 
-    //4. handle message from sender
+    //3. handle message from sender
     std::string command = senderMessage.tag;
     std::string data = senderMessage.data;
 
-    //5. initial command must be join
+    //4. initial command must be join or quit
     if (!room && command != TAG_JOIN) {
       if (command != TAG_QUIT) {
         conn->send(Message(TAG_ERR, "Must join a room first"));
@@ -72,7 +72,7 @@ void chat_with_sender(ClientInfo * info) {
       }
     }
 
-    //2. handle join
+    //5. handle join
     if (command == TAG_JOIN) {
       if (room) {
         conn->send(Message(TAG_ERR, "Already in a room"));
@@ -88,25 +88,35 @@ void chat_with_sender(ClientInfo * info) {
       room = server->find_or_create_room(data);
       room->add_member(user);
       conn->send(Message(TAG_OK, "Joined room: " + data));
-
-    } else if (command == TAG_SENDALL) { //3. handle sendall
+    } 
+    
+    //6. handle sendall
+    else if (command == TAG_SENDALL) { 
       room->broadcast_message(user->username, data);
       conn->send(Message(TAG_OK, "Message sent"));
-    } else if (command == TAG_LEAVE) { //4. handle leave
+    } 
+    
+    //7. handle leave
+    else if (command == TAG_LEAVE) { 
       if (room) {
         room->remove_member(user);
         room = nullptr;
         conn->send(Message(TAG_OK, "Left room")); 
       } else {
         conn->send(Message(TAG_ERR, "not in a room!"));
-      }
-      
-    } else if (command == TAG_QUIT) { //5. handle quit
+      } 
+    } 
+    
+    //8. handle quit
+    else if (command == TAG_QUIT) { 
       if (room) {
         room->remove_member(user);
       } 
       conn->send(Message(TAG_OK, "QUIT"));
-    } else { //6. unknown command
+    } 
+    
+    //9. unknown command
+    else { 
       conn->send(Message(TAG_ERR, "Unknown command"));
     }
   }
@@ -119,26 +129,31 @@ void chat_with_receiver(ClientInfo *info) {
   User * user = info->user;
   Room * room = nullptr;
 
-  //1. join room -> only going to recieve once so need to do this outside the loop
+  //1. read message
   Message recieverMessage;
   if (!conn->receive(recieverMessage)) {
-    //server error handle
     if (conn->get_last_result() == Connection::INVALID_MSG) {
       conn->send(Message(TAG_ERR, "Invalid message format"));
     }
   }
 
+  //2. join room -> only going to recieve once so need to do this outside the loop 
   if (recieverMessage.tag != TAG_JOIN) {
     conn->send(Message(TAG_ERR, "Must join a room first"));
     return;
   } 
+
+  //remove next line character
   if (recieverMessage.data.length() >= 1) {
     recieverMessage.data = recieverMessage.data.substr(0, recieverMessage.data.length() - 1);
   } 
+
+  //register into room and send confirmation
   room = server -> find_or_create_room(recieverMessage.data);
   room->add_member(user);
   conn->send(Message(TAG_OK, "Joined room: " + recieverMessage.data));
 
+  //3. loop after join
   while (1) {
     //get message
     Message * msg = user->mqueue.dequeue();
@@ -147,7 +162,6 @@ void chat_with_receiver(ClientInfo *info) {
     }
 
     conn -> send(*msg);
-
     delete msg;
   }
 }
@@ -167,34 +181,34 @@ void *worker(void *arg) {
   //       separate helper functions for each of these possibilities
   //       is a good idea)
  
-  ClientInfo *info = static_cast<ClientInfo*>(arg); //assumes that arg1 = Connection, arg2 = Server, arg3 = User
+  ClientInfo *info = static_cast<ClientInfo*>(arg); 
   Connection *conn = info->conn;
   Server *server = info->server;
   User *user = info->user;
-
   Message initial_msg;
   bool result = conn->receive(initial_msg);
+
+  //1. read initial login message
   if (result){
-    //ack reception
     std::string replyMessage = "logged in as " + initial_msg.data;
-    //std::cout << replyMessage;
     Message confirmation = Message(TAG_OK, replyMessage);
     if (!conn -> send(confirmation)) {
       std::cerr << "error sending back login in confirmation";
     }
-    //jump to loop
     std::string username = initial_msg.data;
 
+    //remove extra line character
     if (username.length() >= 1) {
       username = username.substr(0, username.length() - 1);
     } 
-    if (initial_msg.tag == TAG_SLOGIN) {
+
+    if (initial_msg.tag == TAG_SLOGIN) { //2. sender login
       user = new User(username);
       chat_with_sender(info);
-    } else if (initial_msg.tag == TAG_RLOGIN) {
+    } else if (initial_msg.tag == TAG_RLOGIN) { //3. receiver login
       user = new User(username);
       chat_with_receiver(info);
-    } else {
+    } else { //4. faulty input
       conn->send(Message("error", "Invalid login message"));
     }
   }
