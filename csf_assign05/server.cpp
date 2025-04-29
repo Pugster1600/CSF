@@ -39,59 +39,7 @@ struct ClientInfo {
 };
 
 
-
-struct ChatMessage {
-  std::string room;
-  std::string sender;
-  std::string content;
-};
-
 namespace {
-
-void handle_message(Connection* conn, Server* server, User* user, Room* room, 
-  const Message& msg, bool is_sender) {
-
-  std::string command = msg.tag;
-  std::string data = msg.data;
-
-  //1. initial command must be join
-  if (!room && command != TAG_JOIN) {
-    conn->send(Message(TAG_ERR, "Must join a room first"));
-    return;
-  }
-
-  //2. handle join from both sender and reciever
-  if (command == TAG_JOIN) {
-    if (room) {
-      conn->send(Message(TAG_ERR, "Already in a room"));
-      return;
-    }
-    if (data.empty()) {
-      conn->send(Message(TAG_ERR, "Room name cannot be empty"));
-      return;
-    }
-
-    room = server->find_or_create_room(data);
-    room->add_member(user);
-    conn->send(Message(TAG_OK, "Joined room " + data));
-
-  } else if (command == TAG_SENDALL && is_sender) { //3. handle sendall from sender
-    room->broadcast_message(user->username, data);
-    conn->send(Message(TAG_OK, "Message sent"));
-  } else if (command == TAG_LEAVE) { //4. handle leave from both sender and reciever
-    conn->send(Message(TAG_OK, "Left room")); 
-    room->remove_member(user);
-    room = nullptr;
-  } else if (command == TAG_QUIT) { //5. handle quit from both sender and reciever
-    if (room) {
-      room->remove_member(user);
-    }
-    throw std::runtime_error("Client quit");
-  } else { //6. unknown command
-    conn->send(Message(TAG_ERR, "Unknown command"));
-  }
-}
-
 // Process sender client messages
 void chat_with_sender(Connection *conn, Server *server, User * user) {
   //1. handle join first
@@ -116,8 +64,10 @@ void chat_with_sender(Connection *conn, Server *server, User * user) {
 
     //5. initial command must be join
     if (!room && command != TAG_JOIN) {
-      conn->send(Message(TAG_ERR, "Must join a room first"));
-      return;
+      if (command != TAG_QUIT) {
+        conn->send(Message(TAG_ERR, "Must join a room first"));
+        return;
+      }
     }
 
     //2. handle join
@@ -209,8 +159,7 @@ void *worker(void *arg) {
   //       receiver, communicate with the client (implementing
   //       separate helper functions for each of these possibilities
   //       is a good idea)
-  // this is Matthew
-  // so since we made the auxilliary data structure ClientInfo we need to cast the void argument to that
+ 
   ClientInfo *info = static_cast<ClientInfo*>(arg); //assumes that arg1 = Connection, arg2 = Server, arg3 = User
   Connection *conn = info->conn;
   Server *server = info->server;

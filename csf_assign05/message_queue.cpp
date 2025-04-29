@@ -3,6 +3,7 @@
 #include "message_queue.h"
 #include "guard.h"
 #include <iostream>
+#include "message.h"
 
 MessageQueue::MessageQueue() {
   // TODO: initialize the mutex and the semaphore
@@ -11,7 +12,7 @@ MessageQueue::MessageQueue() {
   }
 
   //default initialization (NULL arg)
-  if (pthread_mutex_init(&this -> m_lock, NULL) != 0) {
+  if (pthread_mutex_init(&this -> m_lock, nullptr) != 0) {
     std::cerr << "mutex init failed" << std::endl;
   }
 }
@@ -20,8 +21,8 @@ MessageQueue::~MessageQueue() {
   // TODO: destroy the mutex and the semaphore
   {
     Guard guard(this->m_lock);
-    for (Message * m : m_messages) {
-      delete m;
+    for (Message * message : m_messages) {
+      delete message;
     }
   }
 
@@ -30,8 +31,6 @@ MessageQueue::~MessageQueue() {
 }
 
 void MessageQueue::enqueue(Message *msg) {
-  // -> using guards to always unlock when out of scope pthread_mutex_lock(&this -> m_lock);
-  
   {
     Guard guard(this -> m_lock);
     // TODO: put the specified message on the queue
@@ -66,7 +65,7 @@ Message *MessageQueue::dequeue() {
   }
 
   //lock only when message becomes available to prevent locking while blocking
-  
+  //guard only used for the message
   {
     Guard guard(this -> m_lock); //hold mutex for the messagequeue itself
     msg = m_messages.front();
