@@ -26,16 +26,16 @@
 ////////////////////////////////////////////////////////////////////////
 
 struct ClientInfo {
+  User * user;
   Connection *conn;     // Connection object for the client
   Server *server;       // Pointer to server instance
-  User* user;
   
-  ClientInfo(Connection *_conn, Server *_server, User *_user) 
-      : conn(_conn), server(_server),  user(_user){}
+  ClientInfo(User *_user, Connection *_conn, Server *_server) 
+      : user(_user), conn(_conn), server(_server){}
 
   ~ClientInfo() {
-    delete conn;
     delete user;
+    delete conn;
   }
 };
 
@@ -263,7 +263,7 @@ void Server::handle_client_requests() {
     Connection *conn = new Connection(client_fd);
         
     // Create ClientInfo to pass to the client thread
-    ClientInfo *info = new ClientInfo(conn, this, nullptr);
+    ClientInfo *info = new ClientInfo(nullptr, conn, this);
         
     // Create a new thread to handle this client
     pthread_t thread_id;
