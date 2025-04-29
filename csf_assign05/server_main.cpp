@@ -27,6 +27,3 @@ int main(int argc, char **argv) {
 
   server.handle_client_requests();
 }
-
-//issue with server sending back confirmation messages
-// \n is probably the issue

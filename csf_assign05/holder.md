@@ -163,3 +163,5 @@ set args 33333
 
   // -> using guards to always unlock when out of scope pthread_mutex_lock(&this -> m_lock);
   
+    //lock only when message becomes available to prevent locking while blocking
+  //guard only used for the message

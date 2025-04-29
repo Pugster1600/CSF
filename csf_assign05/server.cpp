@@ -41,10 +41,12 @@ struct ClientInfo {
 
 namespace {
 // Process sender client messages
-void chat_with_sender(Connection *conn, Server *server, User * user) {
+void chat_with_sender(ClientInfo * info) {
   //1. handle join first
   Room * room = nullptr;
-
+  Connection *conn = info->conn;
+  Server *server = info->server;
+  User * user = info->user;
   //2. loop
   while (1) {
     //3. read message from ./sender
@@ -111,7 +113,10 @@ void chat_with_sender(Connection *conn, Server *server, User * user) {
 }
 
 // Process reciever client messages
-void chat_with_receiver(Connection *conn, Server *server, User * user) {
+void chat_with_receiver(ClientInfo *info) {
+  Connection *conn = info->conn;
+  Server *server = info->server;
+  User * user = info->user;
   Room * room = nullptr;
 
   //1. join room -> only going to recieve once so need to do this outside the loop
@@ -142,6 +147,8 @@ void chat_with_receiver(Connection *conn, Server *server, User * user) {
     }
 
     conn -> send(*msg);
+
+    delete msg;
   }
 }
 
@@ -183,14 +190,15 @@ void *worker(void *arg) {
     } 
     if (initial_msg.tag == TAG_SLOGIN) {
       user = new User(username);
-      chat_with_sender(conn, server, user);
+      chat_with_sender(info);
     } else if (initial_msg.tag == TAG_RLOGIN) {
       user = new User(username);
-      chat_with_receiver(conn, server, user);
+      chat_with_receiver(info);
     } else {
       conn->send(Message("error", "Invalid login message"));
     }
   }
+
   return nullptr;
 }
 
@@ -215,21 +223,19 @@ Server::~Server() {
     
   // Close server socket if open
   if (m_ssock >= 0) {
-      close(m_ssock);
+    close(m_ssock);
   }
   
   // Free all Room objects
   for (auto it = m_rooms.begin(); it != m_rooms.end(); ++it) {
-      delete it->second;
+    delete it->second;
   }
 }
 
 bool Server::listen() {
   // TODO: use open_listenfd to create the server socket, return true
   //       if successful, false if not
-  //char port_str[20]; //so port number is an int, but we need to convert to string for open_listenfd
-  //yeah listenfd takes string port number
-  //need to convert
+
   std::string str = std::to_string(this -> m_port);  // Convert integer to string
     
   const char* port_str = str.c_str();
@@ -241,7 +247,7 @@ void Server::handle_client_requests() {
   // TODO: infinite loop calling accept or Accept, starting a new
   //       pthread for each connected client
   while(true){
-    int client_fd = Accept(m_ssock, nullptr, nullptr); //something wrong here
+    int client_fd = Accept(m_ssock, nullptr, nullptr);
     if (client_fd < 0) {
       std::cerr << "Error accepting connection" << std::endl;
       continue;
@@ -251,13 +257,11 @@ void Server::handle_client_requests() {
     Connection *conn = new Connection(client_fd);
         
     // Create ClientInfo to pass to the client thread
-    // need to use aux argument or something
     ClientInfo *info = new ClientInfo(conn, this, nullptr);
         
     // Create a new thread to handle this client
     pthread_t thread_id;
-    //thread id, attributes, while 1, arguments
-    int rc = pthread_create(&thread_id, nullptr, worker, static_cast<void*>(info)); //last is aux
+    int rc = pthread_create(&thread_id, nullptr, worker, info);
     if (rc != 0) {
       std::cerr << "Failed to create thread: " << rc << std::endl;
       delete info;
@@ -268,14 +272,23 @@ void Server::handle_client_requests() {
 Room *Server::find_or_create_room(const std::string &room_name) {
   // TODO: return a pointer to the unique Room object representing
   //       the named chat room, creating a new one if necessary
-  Guard guard(m_lock); //for m_rooms
+
+  //critical section to prevent someone else from accessing server when creating room
+  Guard guard(m_lock);
   std::map<std::string, Room*>::iterator it = m_rooms.find(room_name);
+
+  //room does exists
   if (it != m_rooms.end()) {
     return this->m_rooms[room_name];
   } 
 
+  //create new room if not exist
   Room * newRoom = new Room(room_name);
   this->m_rooms[room_name] = newRoom;
 
   return newRoom;
 }
+
+//VALGRIND_ENABLE=1 ./test_sequential.sh 33333 seq_send_1.in seq_send_2.in seq_recv
+//valgrind --leak-check=full --show-leak-kinds=all -s ./test_sequential.sh 33333 seq_send_1.in seq_send_2.in seq_recv
+//client info not destroyed

@@ -19,6 +19,8 @@ MessageQueue::MessageQueue() {
 
 MessageQueue::~MessageQueue() {
   // TODO: destroy the mutex and the semaphore
+
+  //delete all existing messages
   {
     Guard guard(this->m_lock);
     for (Message * message : m_messages) {
@@ -31,6 +33,7 @@ MessageQueue::~MessageQueue() {
 }
 
 void MessageQueue::enqueue(Message *msg) {
+  //hold lock when doing stuff to queue
   {
     Guard guard(this -> m_lock);
     // TODO: put the specified message on the queue
@@ -64,10 +67,9 @@ Message *MessageQueue::dequeue() {
     return nullptr;
   }
 
-  //lock only when message becomes available to prevent locking while blocking
-  //guard only used for the message
+  //hold lock when accessing queue
   {
-    Guard guard(this -> m_lock); //hold mutex for the messagequeue itself
+    Guard guard(this -> m_lock); 
     msg = m_messages.front();
     m_messages.pop_front();
   } 

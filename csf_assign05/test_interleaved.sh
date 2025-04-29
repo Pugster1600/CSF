@@ -1,31 +1,41 @@
 #!/bin/bash
 
-# Usage: ./test_concurrent.sh [port] [in_file1] [in_file2] [out stem]
+# Usage: ./test_interleaved.sh [port] [infile] [out_stem]
 
 #############################################
 # globals section
 #############################################
 PORT=$1
-IN1=$2
-IN2=$3
-OUT_STEM=$4
+INFILE=$2
+OUT_STEM=$3
+
+REF_SENDER="reference/ref-sender"
+REF_RECEIVER="reference/ref-receiver"
 
 USER1=alice
 USER2=bob
-RECV_USER=eve
-REF_SENDER="reference/ref-sender"
-REF_RECEIVER="reference/ref-receiver"
-SERVER_PID=0
+RECV_USER=Eve
 ROOM="partytime"
+SETTLE=0.5
+
+SENDER1_FIFO="temp/1.in"
+SENDER2_FIFO="temp/2.in"
+ALL_SEND_INPUTS=(${SENDER1_FIFO} ${SENDER2_FIFO})
+
+SERVER_PID=0
 RECEIVER_PID=0
 declare -a CLIENT_PIDS
-
+declare -a PIPE_RES_PIDS
 #############################################
 # functions section
 #############################################
 cleanup() {
     local FLAGS=$1
     local PID=0
+    for PID in "${PIPE_RES_PIDS[@]}"; do
+        kill ${FLAGS} ${PID} > /dev/null 2>&1
+        wait ${PID} 2> /dev/null
+    done
     for PID in "${CLIENT_PIDS[@]}"; do
         kill ${FLAGS} ${PID} > /dev/null 2>&1
         wait ${PID} 2> /dev/null
@@ -56,11 +66,40 @@ makepipe() {
     PIPE_RES_PIDS+=($!)
 }
 
+# spinner to make stuff look pretty in the terminal
+spinner() {
+    local TEXT=$1
+    local TIME=0.1
+
+    while true; do
+        echo -ne "${TEXT} ⠋\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠙\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠹\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠸\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠼\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠴\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠦\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠧\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠇\x1b[0G"
+        sleep ${TIME}
+        echo -ne "${TEXT} ⠏\x1b[0G"
+        sleep ${TIME}
+    done
+}
+
 #############################################
 # Script body
 #############################################
-if [[ "$#" -ne 4 ]]; then
-    echo "Usage: $0 [port] [in_file_1] [in_file_2] [out_stem]"
+if [[ "$#" -ne 3 ]]; then
+    echo "Usage: $0 [port] [infile] [out_stem]"
     exit 1
 fi
 # configure traps
@@ -96,22 +135,39 @@ RECEIVER_PID=$!
 # wait for receiver to come up
 sleep 0.5
 
-# spawn senders
-echo "Spawning first sender"
+# spawn send workers
+echo "spawning first sender"
+makepipe ${SENDER1_FIFO}
 stdbuf -oL -eL ${REF_SENDER} localhost ${PORT} ${USER1} \
-    < ${IN1} \
+    < ${SENDER1_FIFO} \
     1> /dev/null \
     2> ${USER1}.err &
-echo "waiting for transmission to settle"
-sleep 2
 
-echo "Spawning second sender"
+echo "spawning second sender"
+makepipe ${SENDER2_FIFO}
 stdbuf -oL -eL ${REF_SENDER} localhost ${PORT} ${USER2} \
-    < ${IN2} \
+    < ${SENDER2_FIFO} \
     1> /dev/null \
     2> ${USER2}.err &
-echo "waiting for transmission to settle"
-sleep 2
+
+# wait for workers to start
+sleep 0.5
+
+spinner "Sending inputs" &
+SPINNER_PID=$!
+
+INDEX=0
+while read LINE; do
+    echo "${LINE}" > "${ALL_SEND_INPUTS[$INDEX]}"
+    INDEX=$((INDEX+1))
+    if [[ $INDEX -eq ${#ALL_SEND_INPUTS[@]} ]]; then
+        INDEX=0
+    fi
+    sleep ${SETTLE}
+done < "${INFILE}"
+
+kill ${SPINNER_PID}
+echo ""
 
 # check that server is still up
 kill -0 ${SERVER_PID}
@@ -120,6 +176,7 @@ if [[ $? -ne 0 ]]; then
     exit 1
 fi
 
+# clean up everything
 echo "cleaning up"
 cleanup
 trap - ERR

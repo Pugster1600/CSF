@@ -36,17 +36,16 @@ void Room::remove_member(User *user) {
 
 void Room::broadcast_message(const std::string &sender_username, const std::string &message_text) {
   // TODO: send a message to every (receiver) User in the room
-  //delivery:room:sender:message
-  std::string combinedMessage = this->room_name + ":" + sender_username + ":" + message_text;
+  
+  std::string combinedMessage = this->room_name + ":" + sender_username + ":" + message_text; //delivery:room:sender:message
   
   {
     Guard guard(this -> lock);
-
+    
+    //add message to queue of all members
     for (User * user : members) {
       Message * messageStruct = new Message(TAG_DELIVERY, combinedMessage);
       user->mqueue.enqueue(messageStruct);
     }
   }
 }
-
-//do valgrind tests!!f=
