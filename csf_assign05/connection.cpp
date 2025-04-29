@@ -57,20 +57,13 @@ bool Connection::send(const Message &msg) {
   // format the message string as "tag:data\n" for transmission
   std::string message = msg.tag + ":" + msg.data;
 
-  if (message.find('\n') != std::string::npos) {
-    //std::cout << "new line character dawg: " << message << std::endl;
-    //return false;
-  } else {
-    //std::cout <<"no new line character" << std::endl;
+  //add new line character if does not exist
+  if (message.find('\n') == std::string::npos) {
     message += '\n';
   }
   
-  //message += '\n';
   // write message to file descriptor using outside method and unbuffered I/O
   ssize_t msgWrite = rio_writen(this->m_fd, message.c_str(), message.size()); //write n bytes NOT buffered
-
-  //std::cout << "sent: "<< message;
-  //std::cout <<"size of message sent" << msgWrite;
 
   //msgWrite returns the string written, so need to check the size. If not equal, error
   if (msgWrite != (ssize_t)message.size()) { //function returns length of written if successful
@@ -100,7 +93,6 @@ bool Connection::receive(Message &msg) {
   
   buffer[msgLength] = '\0'; //buffer it just in case
   std::string receivedMsg = std::string(buffer);
-  //std::cout << "recieved" << buffer;
   // we need to split message up into tag, data, etc
   // therefore have to find location of ":" separator
   size_t pos = receivedMsg.find(':');
@@ -113,8 +105,6 @@ bool Connection::receive(Message &msg) {
   // extract tag and message using substring
   msg.tag = receivedMsg.substr(0, pos);
   msg.data = receivedMsg.substr(pos + 1);
-
-  //std::cout << buffer << std::endl; //for debugging
 
   msg.recievedData = true;
   this -> m_last_result = SUCCESS;

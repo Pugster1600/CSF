@@ -1,3 +1,4 @@
+
 #include <pthread.h>
 #include <iostream>
 #include <sstream>
@@ -40,13 +41,14 @@ struct ClientInfo {
 
 
 namespace {
+
 // Process sender client messages
 void chat_with_sender(ClientInfo * info) {
   //1. handle join first
   Room * room = nullptr;
-  Connection *conn = info->conn;
-  Server *server = info->server;
-  User * user = info->user;
+  Connection *conn = info -> conn;
+  Server *server = info -> server;
+  User * user = info -> user;
 
   while (1) {
     //2. read message from ./sender
@@ -82,6 +84,7 @@ void chat_with_sender(ClientInfo * info) {
         conn->send(Message(TAG_ERR, "Room name cannot be empty"));
         return;
       }
+      //remove new line character from data
       if (data.length() >= 1) {
         data = data.substr(0, data.length() - 1);
       }   
@@ -104,7 +107,7 @@ void chat_with_sender(ClientInfo * info) {
         conn->send(Message(TAG_OK, "Left room")); 
       } else {
         conn->send(Message(TAG_ERR, "not in a room!"));
-      } 
+      }
     } 
     
     //8. handle quit
@@ -112,6 +115,7 @@ void chat_with_sender(ClientInfo * info) {
       if (room) {
         room->remove_member(user);
       } 
+      delete user;
       conn->send(Message(TAG_OK, "QUIT"));
     } 
     
@@ -123,39 +127,39 @@ void chat_with_sender(ClientInfo * info) {
 }
 
 // Process reciever client messages
-void chat_with_receiver(ClientInfo *info) {
-  Connection *conn = info->conn;
-  Server *server = info->server;
-  User * user = info->user;
+void chat_with_receiver(ClientInfo * info) {
   Room * room = nullptr;
+  Connection *conn = info -> conn;
+  Server *server = info -> server;
+  User * user = info -> user;
 
-  //1. read message
+  //1. get join room message
   Message recieverMessage;
   if (!conn->receive(recieverMessage)) {
+    //server error handle
     if (conn->get_last_result() == Connection::INVALID_MSG) {
       conn->send(Message(TAG_ERR, "Invalid message format"));
     }
   }
 
-  //2. join room -> only going to recieve once so need to do this outside the loop 
+  //2. if not join room, reply back
   if (recieverMessage.tag != TAG_JOIN) {
     conn->send(Message(TAG_ERR, "Must join a room first"));
     return;
   } 
 
-  //remove next line character
+  //delete new line character from room
   if (recieverMessage.data.length() >= 1) {
     recieverMessage.data = recieverMessage.data.substr(0, recieverMessage.data.length() - 1);
   } 
 
-  //register into room and send confirmation
+  //3. join room
   room = server -> find_or_create_room(recieverMessage.data);
   room->add_member(user);
   conn->send(Message(TAG_OK, "Joined room: " + recieverMessage.data));
 
-  //3. loop after join
   while (1) {
-    //get message
+    //4. loop and read message
     Message * msg = user->mqueue.dequeue();
     if (!msg) { //queue empty
       continue;
@@ -181,38 +185,37 @@ void *worker(void *arg) {
   //       separate helper functions for each of these possibilities
   //       is a good idea)
  
-  ClientInfo *info = static_cast<ClientInfo*>(arg); 
-  Connection *conn = info->conn;
-  Server *server = info->server;
-  User *user = info->user;
+  ClientInfo *info = static_cast<ClientInfo*>(arg);
   Message initial_msg;
-  bool result = conn->receive(initial_msg);
 
-  //1. read initial login message
+  //1. read login message
+  bool result = info->conn->receive(initial_msg);
   if (result){
+    //2. reply back to login message
     std::string replyMessage = "logged in as " + initial_msg.data;
     Message confirmation = Message(TAG_OK, replyMessage);
-    if (!conn -> send(confirmation)) {
+    if (!info->conn -> send(confirmation)) {
       std::cerr << "error sending back login in confirmation";
     }
     std::string username = initial_msg.data;
 
-    //remove extra line character
+    //delete new line character
     if (username.length() >= 1) {
       username = username.substr(0, username.length() - 1);
     } 
-
-    if (initial_msg.tag == TAG_SLOGIN) { //2. sender login
-      user = new User(username);
+    if (initial_msg.tag == TAG_SLOGIN) { //sender login
+      info->user = new User(username);
       chat_with_sender(info);
-    } else if (initial_msg.tag == TAG_RLOGIN) { //3. receiver login
-      user = new User(username);
+    } else if (initial_msg.tag == TAG_RLOGIN) { //reciever login
+      info->user = new User(username);
       chat_with_receiver(info);
-    } else { //4. faulty input
-      conn->send(Message("error", "Invalid login message"));
+    } else {
+      info->conn->send(Message("error", "Invalid login message"));
     }
+  } else {
+    delete info;
   }
-
+  //delete info;
   return nullptr;
 }
 
@@ -251,7 +254,6 @@ bool Server::listen() {
   //       if successful, false if not
 
   std::string str = std::to_string(this -> m_port);  // Convert integer to string
-    
   const char* port_str = str.c_str();
   m_ssock = open_listenfd(port_str);
   return m_ssock >= 0;
@@ -261,7 +263,7 @@ void Server::handle_client_requests() {
   // TODO: infinite loop calling accept or Accept, starting a new
   //       pthread for each connected client
   while(true){
-    int client_fd = Accept(m_ssock, nullptr, nullptr);
+    int client_fd = Accept(m_ssock, nullptr, nullptr); //something wrong here
     if (client_fd < 0) {
       std::cerr << "Error accepting connection" << std::endl;
       continue;
@@ -275,7 +277,7 @@ void Server::handle_client_requests() {
         
     // Create a new thread to handle this client
     pthread_t thread_id;
-    int rc = pthread_create(&thread_id, nullptr, worker, info);
+    int rc = pthread_create(&thread_id, nullptr, worker, static_cast<void*>(info));
     if (rc != 0) {
       std::cerr << "Failed to create thread: " << rc << std::endl;
       delete info;
@@ -287,16 +289,14 @@ Room *Server::find_or_create_room(const std::string &room_name) {
   // TODO: return a pointer to the unique Room object representing
   //       the named chat room, creating a new one if necessary
 
-  //critical section to prevent someone else from accessing server when creating room
   Guard guard(m_lock);
   std::map<std::string, Room*>::iterator it = m_rooms.find(room_name);
-
-  //room does exists
+  //if room exists, return room
   if (it != m_rooms.end()) {
     return this->m_rooms[room_name];
   } 
 
-  //create new room if not exist
+  //if room does not exist, create room
   Room * newRoom = new Room(room_name);
   this->m_rooms[room_name] = newRoom;
 
@@ -305,4 +305,3 @@ Room *Server::find_or_create_room(const std::string &room_name) {
 
 //VALGRIND_ENABLE=1 ./test_sequential.sh 33333 seq_send_1.in seq_send_2.in seq_recv
 //valgrind --leak-check=full --show-leak-kinds=all -s ./test_sequential.sh 33333 seq_send_1.in seq_send_2.in seq_recv
-//client info not destroyed
