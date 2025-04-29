@@ -43,13 +43,9 @@ struct ClientInfo {
 namespace {
 
 // Process sender client messages
-void chat_with_sender(ClientInfo * info) {
+void chat_with_sender(Connection *conn, Server * server, User * user) {
   //1. handle join first
   Room * room = nullptr;
-  Connection *conn = info -> conn;
-  Server *server = info -> server;
-  User * user = info -> user;
-
   while (1) {
     //2. read message from ./sender
     Message senderMessage;
@@ -127,12 +123,8 @@ void chat_with_sender(ClientInfo * info) {
 }
 
 // Process reciever client messages
-void chat_with_receiver(ClientInfo * info) {
+void chat_with_receiver(Connection *conn, Server * server, User * user) {
   Room * room = nullptr;
-  Connection *conn = info -> conn;
-  Server *server = info -> server;
-  User * user = info -> user;
-
   //1. get join room message
   Message recieverMessage;
   if (!conn->receive(recieverMessage)) {
@@ -205,17 +197,15 @@ void *worker(void *arg) {
     } 
     if (initial_msg.tag == TAG_SLOGIN) { //sender login
       info->user = new User(username);
-      chat_with_sender(info);
+      chat_with_sender(info -> conn, info -> server, info -> user);
     } else if (initial_msg.tag == TAG_RLOGIN) { //reciever login
       info->user = new User(username);
-      chat_with_receiver(info);
+      chat_with_receiver(info -> conn, info -> server, info -> user);
     } else {
       info->conn->send(Message("error", "Invalid login message"));
     }
-  } else {
-    delete info;
   }
-  //delete info;
+  
   return nullptr;
 }
 
